@@ -19,6 +19,11 @@ export default function UserManagement() {
   const [showAdd, setShowAdd] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
+  async function refreshUsers() {
+    const data = await getUsers();
+    setUsers(data);
+  }
+
   /* ==================================================
      FETCH USERS FROM BACKEND
      Replace getUsers() with your API integration
@@ -26,8 +31,7 @@ export default function UserManagement() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await getUsers(); 
-        setUsers(data);
+        await refreshUsers();
       } catch (error) {
         console.error("Failed to fetch users:", error);
       }
@@ -208,10 +212,7 @@ export default function UserManagement() {
       {showAdd && (
         <AddUserModal
           onClose={() => setShowAdd(false)}
-          onSuccess={() => {
-            // 🔁 After backend create → re-fetch instead of reload
-            window.location.reload();
-          }}
+          onSuccess={() => refreshUsers()}
         />
       )}
 
@@ -220,10 +221,7 @@ export default function UserManagement() {
         <DeleteUserModal
           userId={deleteId}
           onClose={() => setDeleteId(null)}
-          onSuccess={() => {
-            // 🔁 After backend delete → re-fetch instead of reload
-            window.location.reload();
-          }}
+          onSuccess={() => refreshUsers()}
         />
       )}
     </div>

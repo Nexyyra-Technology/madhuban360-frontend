@@ -5,8 +5,18 @@ Replace dummy functions with real API calls
 =====================================================
 */
 
-const API_BASE = "http://localhost:5000/api/users"; 
-// 🔁 Change this to your real backend base URL
+const API_BASE = "/api/users";
+// Uses Vite dev proxy to reach the backend
+
+async function readJsonOrThrow(res) {
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok) {
+    const message = data?.error || `Request failed (${res.status})`;
+    throw new Error(message);
+  }
+  return data;
+}
 
 /* ==================================================
    GET ALL USERS
@@ -50,7 +60,7 @@ export async function updateUser(id, data) {
     body: JSON.stringify(data),
   });
 
-  return await res.json();
+  return await readJsonOrThrow(res);
 }
 
 /* ==================================================
@@ -61,7 +71,7 @@ export async function deleteUser(id) {
     method: "DELETE",
   });
 
-  return await res.json();
+  return await readJsonOrThrow(res);
 }
 
 /* ==================================================
@@ -74,7 +84,7 @@ export async function createUser(data) {
     body: JSON.stringify(data),
   });
 
-  return await res.json();
+  return await readJsonOrThrow(res);
 }
 
 /* ==================================================

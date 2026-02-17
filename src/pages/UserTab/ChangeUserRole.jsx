@@ -5,6 +5,8 @@ CHANGE USER ROLE MODAL
 */
 
 export default function ChangeUserRole({ onClose }) {
+  const handleClose = onClose ?? (() => window.history.back());
+
   return (
     <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
       <div className="bg-white w-[600px] rounded-xl p-8 shadow-xl">
@@ -30,7 +32,7 @@ export default function ChangeUserRole({ onClose }) {
         </div>
 
         <div className="flex justify-end gap-3 mt-8">
-          <button onClick={onClose} className="px-4 py-2 border rounded-lg">
+          <button onClick={handleClose} className="px-4 py-2 border rounded-lg">
             Cancel
           </button>
           <button className="px-6 py-2 bg-[#1f2a44] text-white rounded-lg">

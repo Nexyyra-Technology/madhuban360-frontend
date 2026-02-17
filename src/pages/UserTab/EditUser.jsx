@@ -2,12 +2,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getUserById, updateUser } from "./userService";
 import { useEffect, useState } from "react";
 
-/*
-=====================================================
-EDIT USER PAGE
-=====================================================
-*/
-
 export default function EditUser() {
   const { id } = useParams();
   const navigate = useNavigate();

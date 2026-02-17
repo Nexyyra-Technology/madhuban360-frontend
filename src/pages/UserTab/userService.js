@@ -1,12 +1,4 @@
-/*
-=====================================================
-USER SERVICE (Backend Integration Template)
-Replace dummy functions with real API calls
-=====================================================
-*/
-
 const API_BASE = "/api/users";
-// Uses Vite dev proxy to reach the backend
 
 async function readJsonOrThrow(res) {
   const text = await res.text();
@@ -18,9 +10,6 @@ async function readJsonOrThrow(res) {
   return data;
 }
 
-/* ==================================================
-   GET ALL USERS
-================================================== */
 export async function getUsers() {
   try {
     const res = await fetch(API_BASE);
@@ -29,14 +18,10 @@ export async function getUsers() {
   } catch (err) {
     console.error("getUsers error:", err);
 
-    // 🔹 Fallback dummy users (for UI testing only)
     return dummyUsers;
   }
 }
 
-/* ==================================================
-   GET USER BY ID
-================================================== */
 export async function getUserById(id) {
   try {
     const res = await fetch(`${API_BASE}/${id}`);
@@ -45,14 +30,10 @@ export async function getUserById(id) {
   } catch (err) {
     console.error("getUserById error:", err);
 
-    // 🔹 Fallback dummy user
     return dummyUsers.find(u => u._id === id);
   }
 }
 
-/* ==================================================
-   UPDATE USER
-================================================== */
 export async function updateUser(id, data) {
   const res = await fetch(`${API_BASE}/${id}`, {
     method: "PUT",
@@ -63,9 +44,6 @@ export async function updateUser(id, data) {
   return await readJsonOrThrow(res);
 }
 
-/* ==================================================
-   DELETE USER
-================================================== */
 export async function deleteUser(id) {
   const res = await fetch(`${API_BASE}/${id}`, {
     method: "DELETE",
@@ -74,9 +52,6 @@ export async function deleteUser(id) {
   return await readJsonOrThrow(res);
 }
 
-/* ==================================================
-   CREATE USER
-================================================== */
 export async function createUser(data) {
   const res = await fetch(API_BASE, {
     method: "POST",
@@ -86,10 +61,6 @@ export async function createUser(data) {
 
   return await readJsonOrThrow(res);
 }
-
-/* ==================================================
-   DUMMY USERS (UI TESTING)
-================================================== */
 
 const dummyUsers = [
   {

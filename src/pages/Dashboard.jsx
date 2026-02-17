@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 
-/* ---------- DATE FORMATTER ---------- */
 function getFormattedDate(date) {
   const options = {
     weekday: "long",
@@ -12,7 +11,6 @@ function getFormattedDate(date) {
   return date.toLocaleDateString("en-US", options);
 }
 
-/* ---------- LIVE CLOCK HOOK ---------- */
 function useCurrentTime() {
   const [time, setTime] = useState(new Date());
 

@@ -1,17 +1,5 @@
 import { useEffect, useState } from "react";
 
-/*
-========================================================
-USER MANAGEMENT – ENTERPRISE READY
-Includes:
-✔ Fetch users
-✔ Add user modal
-✔ Edit user modal
-✔ Delete confirmation modal
-✔ Backend ready integration comments
-========================================================
-*/
-
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,19 +16,9 @@ export default function UserManagement() {
     role: "Staff",
     status: "Active",
   });
-
-  /* ==================================================
-     FETCH USERS FROM BACKEND
-     Replace mock with real API
-  ================================================== */
   useEffect(() => {
     async function fetchUsers() {
       try {
-        // 🔹 Replace with real API
-        // const res = await fetch("/api/users");
-        // const data = await res.json();
-        // setUsers(data);
-
         const mockUsers = [
           {
             id: 1,

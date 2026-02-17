@@ -4,16 +4,6 @@ import AddUserModal from "./AddUserModal";
 import DeleteUserModal from "./DeleteUserModal";
 import { Link } from "react-router-dom";
 
-/*
-=====================================================
-USER MANAGEMENT DASHBOARD (FIGMA EXACT STYLE)
-Backend Ready
-- View User → /users/:id
-- Edit User → /users/edit/:id
-- Change Role → /users/role/:id
-=====================================================
-*/
-
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
@@ -24,10 +14,6 @@ export default function UserManagement() {
     setUsers(data);
   }
 
-  /* ==================================================
-     FETCH USERS FROM BACKEND
-     Replace getUsers() with your API integration
-  ================================================== */
   useEffect(() => {
     async function load() {
       try {
@@ -42,7 +28,6 @@ export default function UserManagement() {
   return (
     <div className="p-8 bg-[#f5f7fb] min-h-screen">
 
-      {/* ================= HEADER ================= */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <h1 className="text-[22px] font-semibold text-[#1f2937]">
@@ -62,23 +47,16 @@ export default function UserManagement() {
         </button>
       </div>
 
-      {/* ================= FILTER BAR ================= */}
       <div className="flex gap-3 mb-6">
         <input
           placeholder="Search by name, email or ID..."
           className="flex-1 px-4 py-2 border rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-[#1f2a44]/20"
-          onChange={(e) => {
-            // 🔁 Connect backend search API here
-            console.log("Search:", e.target.value);
-          }}
+          onChange={(e) => console.log("Search:", e.target.value)}
         />
 
         <select
           className="px-4 py-2 border rounded-lg bg-white text-sm"
-          onChange={(e) => {
-            // 🔁 Backend role filter here
-            console.log("Role filter:", e.target.value);
-          }}
+          onChange={(e) => console.log("Role filter:", e.target.value)}
         >
           <option>All Roles</option>
           <option>Admin</option>
@@ -89,10 +67,7 @@ export default function UserManagement() {
 
         <select
           className="px-4 py-2 border rounded-lg bg-white text-sm"
-          onChange={(e) => {
-            // 🔁 Backend status filter here
-            console.log("Status filter:", e.target.value);
-          }}
+          onChange={(e) => console.log("Status filter:", e.target.value)}
         >
           <option>All Status</option>
           <option>Active</option>
@@ -100,7 +75,6 @@ export default function UserManagement() {
         </select>
       </div>
 
-      {/* ================= TABLE ================= */}
       <div className="bg-white rounded-xl border overflow-hidden shadow-sm">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-xs uppercase text-gray-500 tracking-wide">
@@ -119,7 +93,6 @@ export default function UserManagement() {
                 key={user._id}
                 className="border-t hover:bg-gray-50 transition"
               >
-                {/* USER PROFILE */}
                 <td className="px-6 py-4">
                   <p className="font-medium text-gray-900">
                     {user.name}
@@ -129,12 +102,10 @@ export default function UserManagement() {
                   </p>
                 </td>
 
-                {/* ROLE */}
                 <td className="px-6 py-4 text-gray-700 font-medium">
                   {user.role}
                 </td>
 
-                {/* STATUS */}
                 <td className="px-6 py-4">
                   <span
                     className={`px-3 py-1 text-xs rounded-full font-medium ${
@@ -147,15 +118,12 @@ export default function UserManagement() {
                   </span>
                 </td>
 
-                {/* LAST LOGIN */}
                 <td className="px-6 py-4 text-gray-600">
                   {user.lastLogin || "-"}
                 </td>
 
-                {/* ACTIONS */}
                 <td className="px-6 py-4 text-right space-x-4">
 
-                  {/* VIEW USER SUMMARY */}
                   <Link
                     to={`/users/${user._id}`}
                     className="text-blue-600 hover:underline font-medium"
@@ -163,7 +131,6 @@ export default function UserManagement() {
                     View
                   </Link>
 
-                  {/* EDIT USER PAGE */}
                   <Link
                     to={`/users/edit/${user._id}`}
                     className="text-gray-600 hover:underline font-medium"
@@ -171,7 +138,6 @@ export default function UserManagement() {
                     Edit
                   </Link>
 
-                  {/* CHANGE ROLE */}
                   <Link
                     to={`/users/role/${user._id}`}
                     className="text-indigo-600 hover:underline font-medium"
@@ -179,7 +145,6 @@ export default function UserManagement() {
                     Role
                   </Link>
 
-                  {/* DELETE USER */}
                   <button
                     onClick={() => setDeleteId(user._id)}
                     className="text-red-600 hover:underline font-medium"
@@ -192,7 +157,6 @@ export default function UserManagement() {
           </tbody>
         </table>
 
-        {/* ================= FOOTER / PAGINATION ================= */}
         <div className="px-6 py-4 bg-gray-50 border-t text-sm text-gray-500 flex justify-between">
           <span>
             Showing 1–{users.length} of {users.length} results
@@ -206,9 +170,6 @@ export default function UserManagement() {
         </div>
       </div>
 
-      {/* ================= MODALS ================= */}
-
-      {/* ADD USER MODAL */}
       {showAdd && (
         <AddUserModal
           onClose={() => setShowAdd(false)}
@@ -216,7 +177,6 @@ export default function UserManagement() {
         />
       )}
 
-      {/* DELETE USER MODAL */}
       {deleteId && (
         <DeleteUserModal
           userId={deleteId}

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 
@@ -23,3 +24,18 @@ export default function Layout({ children }) {
     </div>
   );
 }
+=======
+import { useState } from "react";
+import Sidebar from "./Sidebar";
+
+export default function Layout({ children }) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <div className={`app ${collapsed ? "collapsed" : ""}`}>
+      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+      <main className="main">{children}</main>
+    </div>
+  );
+}
+>>>>>>> 7ff153fd9903c7bdd2dfd4b33e67df74f3f33c8f

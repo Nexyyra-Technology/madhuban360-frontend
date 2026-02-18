@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [deleteId, setDeleteId] = useState(null);
+  const [deleteUser, setDeleteUser] = useState(null);
 
   async function refreshUsers() {
     const data = await getUsers();
@@ -146,7 +146,7 @@ export default function UserManagement() {
                   </Link>
 
                   <button
-                    onClick={() => setDeleteId(user._id)}
+                    onClick={() => setDeleteUser(user)}
                     className="text-red-600 hover:underline font-medium"
                   >
                     Delete
@@ -177,10 +177,12 @@ export default function UserManagement() {
         />
       )}
 
-      {deleteId && (
+      {deleteUser && (
         <DeleteUserModal
-          userId={deleteId}
-          onClose={() => setDeleteId(null)}
+          userId={deleteUser._id}
+          userName={deleteUser.name}
+          userEmail={deleteUser.email}
+          onClose={() => setDeleteUser(null)}
           onSuccess={() => refreshUsers()}
         />
       )}

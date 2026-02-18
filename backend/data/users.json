@@ -1,30 +1,14 @@
 [
   {
-    "_id": "1",
-    "name": "Johnathan Doe",
-    "email": "j.doe@facilitymanagement.com",
-    "phone": "+1 (555) 902-3481",
-    "role": "Admin",
+    "_id": "c4242dcc-166e-4b3b-96b4-0abf13c2449a",
+    "name": "Anagha Kolhe",
+    "email": "anaghakolhe24@gmail.com",
+    "phone": "1546262",
+    "role": "Staff",
     "status": "Active",
-    "jobTitle": "Senior Facility Manager",
-    "lastLogin": "2 hours ago",
-    "tasks": 1284,
-    "completionRate": 98.2,
-    "attendance": 96.5,
-    "pendingRequests": 5
-  },
-  {
-    "_id": "2",
-    "name": "Sarah Chen",
-    "email": "s.chen@facilitymanagement.com",
-    "phone": "+1 (555) 123-4567",
-    "role": "Manager",
-    "status": "Active",
-    "jobTitle": "Facility Manager",
-    "lastLogin": "5 mins ago",
-    "tasks": 540,
-    "completionRate": 95.1,
-    "attendance": 93.2,
-    "pendingRequests": 2
+    "jobTitle": "gggg",
+    "lastLogin": null,
+    "createdAt": "2026-02-17T14:40:09.222Z",
+    "updatedAt": "2026-02-17T14:42:43.648Z"
   }
 ]

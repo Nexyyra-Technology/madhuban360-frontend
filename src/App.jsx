@@ -24,11 +24,11 @@ export default function App() {
 
         <Route path="/users" element={<UserManagement />} />
 
-        <Route path="/users/:id" element={<UserSummary />} />
-
         <Route path="/users/edit/:id" element={<EditUser />} />
 
         <Route path="/users/role/:id" element={<ChangeUserRole />} />
+
+        <Route path="/users/:id" element={<UserSummary />} />
 
         <Route path="/properties" element={<PropertyManagement />} />
         <Route path="/tasks" element={<TaskManager />} />

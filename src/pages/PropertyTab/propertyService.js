@@ -1,14 +1,14 @@
 /**
  * Property Tab API Service
  * ========================
- * All property, asset, and report data flows through this service.
- * Backend: Vite proxy forwards /api/* to http://localhost:5001
- * Database: Backend persists to DB; frontend always fetches from API.
+ * Backend: https://madhuban360-backend.onrender.com (or Vite proxy in dev)
  */
 
-const API_PROPERTIES = "/api/properties";
-const API_ASSETS = "/api/assets";
-const API_REPORTS = "/api/reports";
+import { API_BASE_URL } from "../../config/api";
+
+const API_PROPERTIES = `${API_BASE_URL}/api/properties`;
+const API_ASSETS = `${API_BASE_URL}/api/assets`;
+const API_REPORTS = `${API_BASE_URL}/api/reports`;
 
 async function readJsonOrThrow(res) {
   const text = await res.text();

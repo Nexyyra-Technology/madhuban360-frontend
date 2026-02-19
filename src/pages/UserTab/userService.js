@@ -1,11 +1,12 @@
 /**
  * User API Service
  * ---------------
- * Backend: GET/POST/PUT/DELETE /api/users
- * Proxy: Vite forwards /api/* to http://localhost:5001
+ * Backend: https://madhuban360-backend.onrender.com
  */
 
-const API_BASE = "/api/users";
+import { API_BASE_URL } from "../../config/api";
+
+const API_BASE = `${API_BASE_URL}/api/users`;
 
 async function readJsonOrThrow(res) {
   const text = await res.text();

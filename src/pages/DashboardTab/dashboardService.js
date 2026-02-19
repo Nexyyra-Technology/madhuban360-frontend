@@ -1,11 +1,12 @@
 /**
  * Dashboard API Service
  * --------------------
- * Backend: GET /api/dashboard/metrics | sales-pipeline | revenue | alerts | activity
- * Proxy: Vite forwards /api/* to http://localhost:5001
+ * Backend: https://madhuban360-backend.onrender.com
  */
 
-const API_BASE = "/api/dashboard";
+import { API_BASE_URL } from "../../config/api";
+
+const API_BASE = `${API_BASE_URL}/api/dashboard`;
 
 async function getJson(path) {
   const res = await fetch(`${API_BASE}${path}`);

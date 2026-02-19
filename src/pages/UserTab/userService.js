@@ -1,3 +1,10 @@
+/**
+ * User API Service
+ * ---------------
+ * Backend: GET/POST/PUT/DELETE /api/users
+ * Proxy: Vite forwards /api/* to http://localhost:5001
+ */
+
 const API_BASE = "/api/users";
 
 async function readJsonOrThrow(res) {

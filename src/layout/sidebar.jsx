@@ -1,8 +1,14 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import logoIcon from "../assets/logo-icon.png";
 import logoText from "../assets/logo-text.png";
 
 export default function Sidebar({ collapsed, setCollapsed }) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login", { replace: true });
+  };
   return (
     <aside className="sidebar sidebar-figma">
       <div className="sidebar-inner">
@@ -40,8 +46,11 @@ export default function Sidebar({ collapsed, setCollapsed }) {
               <strong>Harish Sawant</strong>
               <p>Head Administrator</p>
             </div>
-            <button type="button" className="sidebar-logout-btn" title="Logout" aria-label="Logout">↗</button>
+            <button type="button" className="sidebar-logout-btn" title="Logout" aria-label="Logout" onClick={handleLogout}>↗</button>
           </div>
+        )}
+        {!collapsed && (
+          <button type="button" className="sidebar-logout-text-btn" onClick={handleLogout}>Logout</button>
         )}
       </div>
     </aside>

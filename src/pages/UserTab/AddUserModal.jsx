@@ -2,44 +2,62 @@ import { useState } from "react";
 import { createUser } from "./userService";
 import ModalWrapper from "./ModalWrapper";
 
+function formatPhoneForPayload(val) {
+  const digits = (val || "").replace(/\D/g, "").slice(0, 10);
+  return digits.length === 10 ? digits : "";
+}
+
 export default function AddUserModal({ onClose, onSuccess }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
   const [status, setStatus] = useState("Active");
   const [department, setDepartment] = useState("");
-  const [facilityInput, setFacilityInput] = useState("");
-  const [assignedFacilities, setAssignedFacilities] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  function handlePhoneChange(e) {
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+    setPhone(digits);
+  }
+
   async function handleSave() {
     setError("");
-    if (!name.trim() || !email.trim()) {
-      setError("Name and email are required.");
-      return;
-    }
+    const errors = [];
+    if (!name.trim()) errors.push("Full name is required");
+    if (!email.trim()) errors.push("Email address is required");
+    if (!phone.trim()) errors.push("Phone number is required");
+    else if (phone.replace(/\D/g, "").length !== 10) errors.push("Phone number must be 10 digits");
+    if (!username.trim()) errors.push("Username is required");
+    if (!password.trim()) errors.push("Password is required");
+    if (!role) errors.push("System role is required");
 
-    if (!role) {
-      setError("Please select a system role.");
+    if (errors.length > 0) {
+      setError(errors.join(". "));
       return;
     }
 
     try {
       setSaving(true);
+      const dept = department.trim();
       const payload = {
         name: name.trim(),
         email: email.trim(),
-        phone: phone.trim(),
+        phone: formatPhoneForPayload(phone),
+        username: username.trim(),
+        password: password.trim(),
         role,
         status,
-        department: department.trim(),
-        facilities: assignedFacilities,
+        department: dept,
+        primaryDepartment: dept,
+        jobTitle: dept || undefined,
       };
 
-      const created = await createUser(payload);
-      onSuccess?.(created);
+      await createUser(payload);
+      onSuccess?.();
       onClose?.();
     } catch (e) {
       setError(e?.message || "Failed to create user");
@@ -77,6 +95,7 @@ export default function AddUserModal({ onClose, onSuccess }) {
               <div>
                 <label className="text-xs text-gray-600">Email Address <span className="text-red-600">*</span></label>
                 <input
+                  type="email"
                   placeholder="robert.f@company.com"
                   className="w-full border px-4 py-2 rounded-lg"
                   value={email}
@@ -85,16 +104,40 @@ export default function AddUserModal({ onClose, onSuccess }) {
               </div>
 
               <div>
-                <label className="text-xs text-gray-600">Phone Number</label>
+                <label className="text-xs text-gray-600">Phone Number <span className="text-red-600">*</span></label>
                 <input
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="1234567890"
                   className="w-full border px-4 py-2 rounded-lg"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={handlePhoneChange}
+                  maxLength={10}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-gray-600">Username <span className="text-red-600">*</span></label>
+                <input
+                  placeholder="e.g. robert.fox"
+                  className="w-full border px-4 py-2 rounded-lg"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-600">Password <span className="text-red-600">*</span></label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  className="w-full border px-4 py-2 rounded-lg"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
             </div>
           </div>
+          <p className="text-xs text-gray-400 mt-2">Username and password will be used for login.</p>
         </section>
 
         <div className="border-t border-dotted border-gray-200" />
@@ -110,10 +153,10 @@ export default function AddUserModal({ onClose, onSuccess }) {
                 onChange={(e) => setRole(e.target.value)}
               >
                 <option value="">Select a role</option>
-                <option>Admin</option>
-                <option>Manager</option>
-                <option>Supervisor</option>
-                <option>Staff</option>
+                <option value="Admin">Admin</option>
+                <option value="Manager">Manager</option>
+                <option value="Supervisor">Supervisor</option>
+                <option value="Staff">Staff</option>
               </select>
             </div>
 
@@ -124,75 +167,32 @@ export default function AddUserModal({ onClose, onSuccess }) {
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
               >
-                <option>Active</option>
-                <option>Suspended</option>
+                <option value="Active">Active</option>
+                <option value="Suspended">Suspended</option>
               </select>
             </div>
-          </div>
 
-          <p className="text-xs text-gray-400 mt-2">User will receive an email invitation to set their initial password.</p>
-        </section>
-
-        <div className="border-t border-dotted border-gray-200" />
-
-        <section>
-          <h3 className="text-sm font-medium mb-3">Facility Assignment</h3>
-
-          <div className="grid grid-cols-1 gap-3">
-            <label className="text-xs text-gray-600">Primary Department</label>
-            <input
-              placeholder="e.g. Maintenance, Operations"
-              className="w-full border px-4 py-2 rounded-lg"
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-            />
-
-            <label className="text-xs text-gray-600">Assigned Facilities</label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {assignedFacilities.map((f) => (
-                <span key={f} className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full flex items-center gap-2">
-                  {f}
-                  <button onClick={() => setAssignedFacilities((s) => s.filter(x => x !== f))} className="text-xs text-gray-500">✕</button>
-                </span>
-              ))}
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                placeholder="Search facilities..."
-                className="flex-1 border px-4 py-2 rounded-lg"
-                value={facilityInput}
-                onChange={(e) => setFacilityInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    const val = facilityInput.trim();
-                    if (val && !assignedFacilities.includes(val)) {
-                      setAssignedFacilities((s) => [...s, val]);
-                      setFacilityInput("");
-                    }
-                  }
-                }}
-              />
-              <button
-                onClick={() => {
-                  const val = facilityInput.trim();
-                  if (val && !assignedFacilities.includes(val)) {
-                    setAssignedFacilities((s) => [...s, val]);
-                    setFacilityInput("");
-                  }
-                }}
-                className="px-4 py-2 bg-gray-100 rounded-lg"
+            <div>
+              <label className="text-xs text-gray-600">Primary Department</label>
+              <select
+                className="w-full border px-3 py-2 rounded-lg"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
               >
-                Add
-              </button>
+                <option value="">Select department</option>
+                <option value="Maintenance">Maintenance</option>
+                <option value="Operations">Operations</option>
+                <option value="Electrical">Electrical</option>
+              </select>
             </div>
           </div>
         </section>
       </div>
 
       {error ? (
-        <p className="text-sm text-red-600 mt-4">{error}</p>
+        <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-100">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
       ) : null}
 
       <div className="flex justify-end gap-3 mt-6">

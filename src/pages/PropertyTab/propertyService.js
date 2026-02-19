@@ -1,21 +1,16 @@
 /**
  * Property Tab API Service
- * ========================
- * Backend: https://madhuban360-backend.onrender.com (or Vite proxy in dev)
+ * ------------------------
+ * Backend: GET/POST /api/properties, GET /api/assets, GET /api/reports
+ * Base URL: https://madhuban360-backend.onrender.com (see .env)
  */
 
 import { API_BASE_URL } from "../../config/api";
+import { readJsonOrThrow } from "../../lib/apiClient";
 
 const API_PROPERTIES = `${API_BASE_URL}/api/properties`;
 const API_ASSETS = `${API_BASE_URL}/api/assets`;
 const API_REPORTS = `${API_BASE_URL}/api/reports`;
-
-async function readJsonOrThrow(res) {
-  const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
-  if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`);
-  return data;
-}
 
 // -----------------------------------------------------------------------------
 // PROPERTIES (CRUD - saves to database via backend)

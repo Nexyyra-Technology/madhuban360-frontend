@@ -18,12 +18,22 @@ import {
 import { Link } from "react-router-dom";
 
 function getFormattedDate(date) {
-  return date.toLocaleDateString("en-US", {
+  const options = {
     weekday: "long",
     month: "short",
     day: "numeric",
     year: "numeric",
-  });
+  };
+  return date.toLocaleDateString("en-US", options);
+}
+
+function useCurrentTime() {
+  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    const interval = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+  return time;
 }
 
 function formatCurrency(n) {
@@ -36,7 +46,7 @@ function formatCurrency(n) {
 }
 
 export default function Dashboard() {
-  const [date] = useState(new Date());
+  const currentTime = useCurrentTime();
   const [metrics, setMetrics] = useState(null);
   const [salesPipeline, setSalesPipeline] = useState(null);
   const [revenue, setRevenue] = useState(null);
@@ -104,7 +114,7 @@ export default function Dashboard() {
         <div>
           <h1 className="dashboard-title">Dashboard Overview</h1>
           <p className="dashboard-subtitle">
-            System metrics for today, {getFormattedDate(date)}
+            System metrics for today, {getFormattedDate(currentTime)} • {currentTime.toLocaleTimeString()}
           </p>
         </div>
         <div className="dashboard-add-buttons">

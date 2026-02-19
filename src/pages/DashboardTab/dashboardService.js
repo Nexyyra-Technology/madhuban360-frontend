@@ -1,7 +1,8 @@
 /**
  * Dashboard API Service
  * --------------------
- * Backend: https://madhuban360-backend.onrender.com
+ * Backend: GET /api/dashboard/metrics | sales-pipeline | revenue | alerts | activity
+ * Base URL: https://madhuban360-backend.onrender.com (see .env)
  */
 
 import { API_BASE_URL } from "../../config/api";

@@ -69,6 +69,16 @@ export async function deleteUser(id) {
   return await readJsonOrThrow(res);
 }
 
+export async function resetPassword(id, newPassword) {
+  const res = await fetch(`${API_BASE}/${id}/reset-password`, {
+    method: "PUT",
+    headers: getAuthHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ password: newPassword }),
+  });
+
+  return await readJsonOrThrow(res);
+}
+
 export async function createUser(data) {
   const res = await fetch(API_BASE, {
     method: "POST",

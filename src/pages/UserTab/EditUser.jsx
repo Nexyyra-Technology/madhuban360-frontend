@@ -6,7 +6,6 @@ export default function EditUser() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -153,7 +152,7 @@ export default function EditUser() {
             Account Configuration
           </h3>
 
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs text-gray-600">User Role</label>
               <select
@@ -178,66 +177,6 @@ export default function EditUser() {
                 <option>Spanish</option>
                 <option>French</option>
               </select>
-            </div>
-          </div>
-
-          <div className="border-t pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Two-Factor Authentication</p>
-                <p className="text-xs text-gray-500">Require a code for signs from new devices</p>
-              </div>
-              <button
-                onClick={() => setTwoFactorEnabled(!twoFactorEnabled)}
-                className={`relative w-12 h-6 rounded-full transition ${twoFactorEnabled ? "bg-blue-500" : "bg-gray-300"}`}
-              >
-                <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition ${twoFactorEnabled ? "translate-x-6" : ""}`} />
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* Facility Assignment */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium flex items-center gap-2">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-              </svg>
-              Facility Assignment
-            </h3>
-            <button className="text-xs text-blue-600 font-medium">Select All</button>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 border rounded-lg">
-              <input type="checkbox" defaultChecked className="w-4 h-4" />
-              <div>
-                <p className="text-sm font-medium">North Wing Plaza</p>
-                <p className="text-xs text-gray-500">Building A, 100 Center Ave</p>
-              </div>
-              <span className="ml-auto text-xs text-blue-600">Primary</span>
-            </div>
-            <div className="flex items-center gap-3 p-3 border rounded-lg">
-              <input type="checkbox" defaultChecked className="w-4 h-4" />
-              <div>
-                <p className="text-sm font-medium">Downtown Tech Hub</p>
-                <p className="text-xs text-gray-500">Building B, 200 Main Street</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 border rounded-lg">
-              <input type="checkbox" className="w-4 h-4" />
-              <div>
-                <p className="text-sm font-medium">East Logistics Center</p>
-                <p className="text-xs text-gray-500">Warehouse C, Port Road</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 border rounded-lg">
-              <input type="checkbox" className="w-4 h-4" />
-              <div>
-                <p className="text-sm font-medium">Southern Solar Farm</p>
-                <p className="text-xs text-gray-500">Field D, Valley Way</p>
-              </div>
             </div>
           </div>
         </section>

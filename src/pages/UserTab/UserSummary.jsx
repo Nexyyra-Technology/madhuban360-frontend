@@ -1,12 +1,14 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { getUserById } from "./userService";
 import { useEffect, useState } from "react";
+import ResetPasswordModal from "./ResetPasswordModal";
 
 export default function UserSummary() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("Overview");
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -18,6 +20,15 @@ export default function UserSummary() {
 
   if (!user) return null;
 
+  const resetPasswordModal = showResetPasswordModal && (
+    <ResetPasswordModal
+      userId={id}
+      userName={user.name}
+      onClose={() => setShowResetPasswordModal(false)}
+      onSuccess={() => setShowResetPasswordModal(false)}
+    />
+  );
+
   const initials = user.name
     ?.split(" ")
     .map((w) => w[0])
@@ -26,6 +37,7 @@ export default function UserSummary() {
 
   return (
     <div className="p-8 bg-[#f5f7fb] min-h-screen">
+      {resetPasswordModal}
       <button onClick={() => navigate(-1)} className="text-sm text-blue-600 mb-6">← Back</button>
 
       {/* Header Section */}
@@ -56,7 +68,11 @@ export default function UserSummary() {
             >
               ✏️ Edit
             </button>
-            <button className="px-4 py-2 bg-gray-700 text-white rounded-lg font-medium">
+            <button
+              type="button"
+              onClick={() => setShowResetPasswordModal(true)}
+              className="px-4 py-2 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 cursor-pointer"
+            >
               🔄 Reset Password
             </button>
           </div>

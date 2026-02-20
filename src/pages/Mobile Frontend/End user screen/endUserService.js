@@ -52,13 +52,13 @@ export async function updateUserProfile(payload) {
 
 /* ---------- TASKS (Database: tasks collection) ---------- */
 
-/** Backend: GET /api/tasks - fetch tasks for current user (assigneeId from token) */
+/** Backend: GET /api/staff/tasks - fetch tasks assigned to current user */
 export async function getMyTasks(filters = {}) {
   const params = new URLSearchParams();
   if (filters.status) params.set("status", filters.status);
-  if (filters.assigneeId) params.set("assigneeId", filters.assigneeId);
   const qs = params.toString();
-  const url = qs ? `${API}/tasks?${qs}` : `${API}/tasks`;
+  // Use /api/staff/tasks to get only tasks assigned to the logged-in user
+  const url = qs ? `${API}/staff/tasks?${qs}` : `${API}/staff/tasks`;
   const res = await fetch(url, { headers: getAuthHeaders() });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -69,9 +69,14 @@ export async function getMyTasks(filters = {}) {
   return tasks.map(normalizeTask);
 }
 
-/** Backend: GET /api/tasks/:id - fetch single task by id from database */
+/** Backend: GET /api/staff/tasks - fetch assigned tasks (alias for dashboard) */
+export async function getMyAssignedTasks() {
+  return getMyTasks({});
+}
+
+/** Backend: GET /api/staff/tasks/:id - fetch single task by id from database */
 export async function getTaskById(id) {
-  const res = await fetch(`${API}/tasks/${id}`, { headers: getAuthHeaders() });
+  const res = await fetch(`${API}/staff/tasks/${id}`, { headers: getAuthHeaders() });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
     if (res.status === 404) return getFallbackTask(id);
@@ -81,9 +86,9 @@ export async function getTaskById(id) {
   return normalizeTask(task);
 }
 
-/** Backend: PATCH /api/tasks/:id/status - update task status in database */
+/** Backend: PATCH /api/staff/tasks/:id/status - update task status in database */
 export async function updateTaskStatus(taskId, status) {
-  const res = await fetch(`${API}/tasks/${taskId}/status`, {
+  const res = await fetch(`${API}/staff/tasks/${taskId}/status`, {
     method: "PATCH",
     headers: getAuthHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ status }),
@@ -91,17 +96,17 @@ export async function updateTaskStatus(taskId, status) {
   return readJsonOrThrow(res);
 }
 
-/** Backend: POST /api/tasks/:id/complete - submit task completion with photos; saved to database */
+/** Backend: POST /api/staff/tasks/:id/complete - submit task completion with photos; saved to database */
 export async function submitTaskCompletion(taskId, { beforePhoto, afterPhoto, notes }) {
   const formData = new FormData();
-  if (beforePhoto) formData.append("beforePhoto", beforePhoto);
-  if (afterPhoto) formData.append("afterPhoto", afterPhoto);
+  if (beforePhoto) formData.append("before", beforePhoto);
+  if (afterPhoto) formData.append("after", afterPhoto);
   if (notes) formData.append("notes", notes);
 
   const headers = getAuthHeaders();
   delete headers["Content-Type"];
 
-  const res = await fetch(`${API}/tasks/${taskId}/complete`, {
+  const res = await fetch(`${API}/staff/tasks/${taskId}/complete`, {
     method: "POST",
     headers,
     body: formData,
@@ -146,13 +151,19 @@ function normalizeTask(t) {
   return {
     ...t,
     _id: t.id ?? t._id,
-    status: (t.status ?? "TO_DO").toUpperCase().replace(/\s/g, "_"),
+    title: t.taskName ?? t.title ?? t.task_name ?? "Untitled Task",
+    subtitle: t.departmentName ?? t.propertyName ?? t.category ?? "",
+    description: t.description ?? "",
+    dueTime: t.dueDate ?? t.due_date ?? null,
+    dueDate: t.dueDate ?? t.due_date ?? null,
+    status: (t.status ?? "pending").toUpperCase().replace(/\s/g, "_"),
+    priority: (t.priority ?? "MEDIUM").toUpperCase(),
+    location: t.roomNumber ?? t.locationFloor ?? t.room_number ?? t.location_floor ?? "",
   };
 }
 
 function getFallbackUser() {
   return {
-    name: "Alex",
     _id: "user-1",
     userId: "SUP-2023-89",
     zone: "Zone B: Cafeteria & Lobby",

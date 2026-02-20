@@ -9,7 +9,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileBottomNav from "./MobileBottomNav";
-import { getMyTasks } from "./endUserService";
+import { getMyAssignedTasks } from "./endUserService";
 
 export default function EndUserTasksList() {
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ export default function EndUserTasksList() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getMyTasks({})
+    getMyAssignedTasks()
       .then((t) => setTasks(Array.isArray(t) ? t : []))
       .catch(() => setTasks([]))
       .finally(() => setLoading(false));

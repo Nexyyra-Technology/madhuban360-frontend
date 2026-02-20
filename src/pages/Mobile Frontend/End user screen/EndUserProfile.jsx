@@ -11,7 +11,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileBottomNav from "./MobileBottomNav";
+import { useAuth } from "../../../context/AuthContext";
 import { getCurrentUser } from "./endUserService";
+
+function getUserDisplayName(user) {
+  if (!user) return "User";
+  if (user.fullName) return user.fullName;
+  if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
+  if (user.firstName) return user.firstName;
+  if (user.displayName) return user.displayName;
+  if (user.name && !["Admin", "User", "admin", "user"].includes(user.name)) return user.name;
+  if (user.username && !["Admin", "User", "admin", "user"].includes(user.username)) return user.username;
+  return "User";
+}
 
 const MENU_ITEMS = [
   { key: "edit", label: "Edit Profile", icon: "👥", path: "/mobile/profile/edit" },
@@ -22,14 +34,19 @@ const MENU_ITEMS = [
 
 export default function EndUserProfile() {
   const navigate = useNavigate();
+  const { user: authUser, setUser: setAuthUser } = useAuth();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    getCurrentUser().then(setUser).catch(() => setUser({ name: "Rajesh Kumar", userId: "SUP-2023-89", zone: "Zone B: Cafeteria & Lobby" }));
-  }, []);
+    getCurrentUser()
+      .then((u) => setUser({ ...authUser, ...u }))
+      .catch(() => setUser(authUser || { userId: "SUP-2023-89", zone: "Zone B: Cafeteria & Lobby" }));
+  }, [authUser]);
 
   function handleLogout() {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setAuthUser(null);
     navigate("/mobile/login", { replace: true });
   }
 
@@ -45,7 +62,7 @@ export default function EndUserProfile() {
           <div className="profile-avatar" />
           <button type="button" className="profile-edit-avatar" aria-label="Edit photo">✎</button>
         </div>
-        <h2>{user?.name || "Rajesh Kumar"}</h2>
+        <h2>{getUserDisplayName(user)}</h2>
         <p className="profile-id">ID: {user?.userId || user?._id || "SUP-2023-89"}</p>
         <span className="profile-zone">📍 {user?.zone || "Zone B: Cafeteria & Lobby"}</span>
       </div>

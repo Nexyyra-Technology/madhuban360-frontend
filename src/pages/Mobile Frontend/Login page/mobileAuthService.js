@@ -77,7 +77,9 @@ export async function mobileLogin(mobile, password) {
   if (lastRes?.status === 404) {
     const fallback = import.meta.env.VITE_DEV_TOKEN || "demo-token";
     localStorage.setItem("token", fallback);
-    return { token: fallback };
+    const fallbackUser = { name: isEmail ? trimmed.split("@")[0] : "User", mobile: normalized };
+    localStorage.setItem("user", JSON.stringify(fallbackUser));
+    return { token: fallback, user: fallbackUser };
   }
 
   if (!lastRes?.ok) {
@@ -90,7 +92,10 @@ export async function mobileLogin(mobile, password) {
     throw new Error("Login succeeded but no token received.");
   }
   localStorage.setItem("token", token);
-  return { token };
+
+  const user = lastData?.data?.user ?? lastData?.user ?? { name: "User", mobile: normalized };
+  localStorage.setItem("user", JSON.stringify(user));
+  return { token, user };
 }
 
 /**

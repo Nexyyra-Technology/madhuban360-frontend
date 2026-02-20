@@ -39,16 +39,20 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
     try {
       setSaving(true);
       // Backend: POST /api/tasks - payload saved to backend/database
+      // Convert assigneeId to number (backend expects numeric id)
+      const numericAssigneeId = assigneeId ? parseInt(assigneeId, 10) : undefined;
+      const assigneeName = staff.find((u) => u._id === assigneeId)?.name;
+      
       await createTask({
-        title: taskName.trim(),
+        taskName: taskName.trim(),
         description: description.trim() || undefined,
         category,
-        assigneeId: assigneeId || undefined,
-        assignee: staff.find((u) => u._id === assigneeId)?.name,
+        assigneeId: numericAssigneeId,
+        assigneeName: assigneeName || undefined,
         priority,
-        location: propertyRoom,
+        roomNumber: propertyRoom,
         dueDate: dueDate || undefined,
-        status: "TO_DO",
+        status: "pending",
       });
       onSuccess?.();
       onClose?.();

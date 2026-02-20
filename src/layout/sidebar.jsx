@@ -43,8 +43,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
           <div className="sidebar-user">
             <div className="avatar" />
             <div className="sidebar-user-info">
-              <strong>Harish Sawant</strong>
-              <p>Head Administrator</p>
+              <strong>ADMIN</strong>
             </div>
             <button type="button" className="sidebar-logout-btn" title="Logout" aria-label="Logout" onClick={handleLogout}>↗</button>
           </div>

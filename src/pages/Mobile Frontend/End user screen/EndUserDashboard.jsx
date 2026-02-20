@@ -11,9 +11,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileBottomNav from "./MobileBottomNav";
+import { useAuth } from "../../../context/AuthContext";
 import {
   getCurrentUser,
   getMyTasks,
+  getMyAssignedTasks,
   getTodayAttendance,
   checkIn,
 } from "./endUserService";
@@ -25,34 +27,55 @@ function getGreeting() {
   return "Good Evening";
 }
 
+function getUserDisplayName(user) {
+  if (!user) return "User";
+  if (user.fullName) return user.fullName;
+  if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
+  if (user.firstName) return user.firstName;
+  if (user.displayName) return user.displayName;
+  if (user.name && !["Admin", "User", "admin", "user"].includes(user.name)) return user.name;
+  if (user.username && !["Admin", "User", "admin", "user"].includes(user.username)) return user.username;
+  return "User";
+}
+
 export default function EndUserDashboard() {
   const navigate = useNavigate();
+  const { user: authUser } = useAuth();
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [attendance, setAttendance] = useState({ checkedIn: false });
   const [loading, setLoading] = useState(true);
   const [checkingIn, setCheckingIn] = useState(false);
 
+  async function loadTasks() {
+    try {
+      const t = await getMyAssignedTasks();
+      setTasks(Array.isArray(t) ? t : []);
+    } catch (e) {
+      console.error("Failed to load tasks:", e);
+    }
+  }
+
   useEffect(() => {
     async function load() {
       try {
         const [u, t, a] = await Promise.all([
           getCurrentUser(),
-          getMyTasks({}),
+          getMyAssignedTasks(),
           getTodayAttendance(),
         ]);
-        setUser(u);
+        setUser({ ...authUser, ...u });
         setTasks(Array.isArray(t) ? t : []);
         setAttendance(a || { checkedIn: false });
       } catch (e) {
-        setUser({ name: "Alex", location: "Madhuban Group" });
+        setUser(authUser || { name: "User", location: "Madhuban Group" });
         setTasks([]);
       } finally {
         setLoading(false);
       }
     }
     load();
-  }, []);
+  }, [authUser]);
 
   async function handleCheckIn() {
     if (attendance.checkedIn) return;
@@ -60,6 +83,9 @@ export default function EndUserDashboard() {
     try {
       await checkIn(user?.location || "Lobby, Building A");
       setAttendance({ checkedIn: true });
+      // Refresh tasks after check-in to show assigned tasks
+      const updatedTasks = await getMyAssignedTasks();
+      setTasks(Array.isArray(updatedTasks) ? updatedTasks : []);
     } catch (e) {
       setAttendance({ checkedIn: true });
     } finally {
@@ -67,8 +93,11 @@ export default function EndUserDashboard() {
     }
   }
 
-  const done = tasks.filter((t) => t.status === "COMPLETED").length;
-  const remaining = tasks.filter((t) => ["TO_DO", "IN_PROGRESS", "PENDING"].includes(t.status)).length;
+  const done = tasks.filter((t) => t.status?.toUpperCase() === "COMPLETED").length;
+  const remaining = tasks.filter((t) => {
+    const status = t.status?.toUpperCase();
+    return ["TO_DO", "IN_PROGRESS", "PENDING", "OVERDUE"].includes(status);
+  }).length;
 
   const statusStyle = (s) => {
     if (s === "OVERDUE") return "overdue";
@@ -83,7 +112,7 @@ export default function EndUserDashboard() {
         <div className="end-user-profile-row">
           <div className="end-user-avatar" />
           <div className="end-user-info">
-            <h2>{getGreeting()}, {user?.name || "User"}</h2>
+            <h2>{getGreeting()}, {getUserDisplayName(user)}</h2>
             <p className="end-user-location">📍 {user?.location || "Madhuban Group"}</p>
           </div>
           <button type="button" className="end-user-notify" aria-label="Notifications">🔔</button>
@@ -127,7 +156,17 @@ export default function EndUserDashboard() {
       </section>
 
       <section className="end-user-section">
-        <h3>My Active Tasks</h3>
+        <div className="end-user-section-head">
+          <h3>My Active Tasks</h3>
+          <button 
+            type="button" 
+            onClick={loadTasks} 
+            className="text-blue-600 text-sm"
+            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            ↻ Refresh
+          </button>
+        </div>
         <div className="end-user-task-list">
           {loading ? (
             <p>Loading tasks...</p>

@@ -6,7 +6,7 @@
  */
 
 import { API_BASE_URL } from "../../config/api";
-import { readJsonOrThrow } from "../../lib/apiClient";
+import { readJsonOrThrow, getAuthHeaders } from "../../lib/apiClient";
 
 const API_PROPERTIES = `${API_BASE_URL}/api/properties`;
 const API_ASSETS = `${API_BASE_URL}/api/assets`;
@@ -16,13 +16,29 @@ const API_REPORTS = `${API_BASE_URL}/api/reports`;
 // PROPERTIES (CRUD - saves to database via backend)
 // -----------------------------------------------------------------------------
 
+/** Normalize property object from backend to frontend format */
+function normalizeProperty(p) {
+  return {
+    ...p,
+    name: p.propertyName || p.name,
+    category: p.propertyType || p.category || "COMMERCIAL",
+    image: p.imageUrl || p.image || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab",
+    location: p.location || [p.city, p.stateProvince].filter(Boolean).join(", ") || "—",
+    amcStatus: p.amcStatus || "ACTIVE",
+    amcColor: p.amcStatus === "EXPIRED" ? "text-red-600" : p.amcStatus === "EXPIRING SOON" ? "text-amber-600" : "text-green-600",
+    isExpired: p.amcStatus === "EXPIRED",
+  };
+}
+
 /** GET /api/properties - Fetch all properties from database */
 export async function getProperties(params = {}) {
   try {
     const qs = new URLSearchParams(params).toString();
-    const res = await fetch(`${API_PROPERTIES}${qs ? `?${qs}` : ""}`);
-    if (!res.ok) throw new Error("Failed to fetch properties");
-    return await res.json();
+    const res = await fetch(`${API_PROPERTIES}${qs ? `?${qs}` : ""}`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error(`Failed to fetch properties (${res.status})`);
+    const json = await res.json();
+    const list = Array.isArray(json?.data) ? json.data : (json?.data?.properties ?? json?.properties ?? json?.list ?? (Array.isArray(json) ? json : []));
+    return list.map(normalizeProperty);
   } catch (e) {
     console.warn("[propertyService] getProperties fallback", e);
     return FALLBACK_PROPERTIES;
@@ -32,9 +48,10 @@ export async function getProperties(params = {}) {
 /** GET /api/properties/:id - Fetch single property */
 export async function getPropertyById(id) {
   try {
-    const res = await fetch(`${API_PROPERTIES}/${id}`);
+    const res = await fetch(`${API_PROPERTIES}/${id}`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error("Property not found");
-    return await res.json();
+    const json = await res.json();
+    return json?.data?.property ?? json?.data ?? json;
   } catch (e) {
     console.warn("[propertyService] getPropertyById fallback", e);
     return FALLBACK_PROPERTIES.find((p) => String(p.id) === String(id)) || null;
@@ -45,7 +62,7 @@ export async function getPropertyById(id) {
 export async function createProperty(data) {
   const res = await fetch(API_PROPERTIES, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(data),
   });
   return readJsonOrThrow(res);
@@ -55,7 +72,7 @@ export async function createProperty(data) {
 export async function updateProperty(id, data) {
   const res = await fetch(`${API_PROPERTIES}/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(data),
   });
   return readJsonOrThrow(res);
@@ -63,7 +80,10 @@ export async function updateProperty(id, data) {
 
 /** DELETE /api/properties/:id - Delete property */
 export async function deleteProperty(id) {
-  const res = await fetch(`${API_PROPERTIES}/${id}`, { method: "DELETE" });
+  const res = await fetch(`${API_PROPERTIES}/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
   return readJsonOrThrow(res);
 }
 
@@ -74,9 +94,16 @@ export async function deleteProperty(id) {
 /** GET /api/properties/summary - Dashboard-style metrics for property tab */
 export async function getPropertySummary() {
   try {
-    const res = await fetch(`${API_PROPERTIES}/summary`);
-    if (!res.ok) throw new Error("Failed to fetch summary");
-    return await res.json();
+    const res = await fetch(`${API_PROPERTIES}/summary`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error(`Failed to fetch summary (${res.status})`);
+    const json = await res.json();
+    const data = json?.data ?? json;
+    return {
+      total: data.total ?? 0,
+      activeAmc: data.activeAmcCount ?? data.activeAmc ?? 0,
+      expiringAmc: data.expiringAmcCount ?? data.expiringAmc ?? 0,
+      occupancyPercent: data.occupancy ?? data.occupancyPercent ?? 0,
+    };
   } catch (e) {
     console.warn("[propertyService] getPropertySummary fallback", e);
     return { total: 42, activeAmc: 38, expiringAmc: 4, occupancyPercent: 92 };
@@ -91,9 +118,10 @@ export async function getPropertySummary() {
 export async function getAssets(params = {}) {
   try {
     const qs = new URLSearchParams(params).toString();
-    const res = await fetch(`${API_ASSETS}${qs ? `?${qs}` : ""}`);
-    if (!res.ok) throw new Error("Failed to fetch assets");
-    return await res.json();
+    const res = await fetch(`${API_ASSETS}${qs ? `?${qs}` : ""}`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error(`Failed to fetch assets (${res.status})`);
+    const json = await res.json();
+    return json?.data ?? json;
   } catch (e) {
     console.warn("[propertyService] getAssets fallback", e);
     return { list: FALLBACK_ASSETS, total: 150 };
@@ -103,9 +131,10 @@ export async function getAssets(params = {}) {
 /** GET /api/assets/summary - Asset metrics (Total, Needs Attention, etc.) */
 export async function getAssetSummary() {
   try {
-    const res = await fetch(`${API_ASSETS}/summary`);
-    if (!res.ok) throw new Error("Failed to fetch asset summary");
-    return await res.json();
+    const res = await fetch(`${API_ASSETS}/summary`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error(`Failed to fetch asset summary (${res.status})`);
+    const json = await res.json();
+    return json?.data ?? json;
   } catch (e) {
     console.warn("[propertyService] getAssetSummary fallback", e);
     return { total: 1284, needsAttention: 12, upcomingService: 48, uptimeRate: 99.8 };
@@ -120,9 +149,10 @@ export async function getAssetSummary() {
 export async function getReports(params = {}) {
   try {
     const qs = new URLSearchParams(params).toString();
-    const res = await fetch(`${API_REPORTS}${qs ? `?${qs}` : ""}`);
-    if (!res.ok) throw new Error("Failed to fetch reports");
-    return await res.json();
+    const res = await fetch(`${API_REPORTS}${qs ? `?${qs}` : ""}`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error(`Failed to fetch reports (${res.status})`);
+    const json = await res.json();
+    return json?.data ?? json;
   } catch (e) {
     console.warn("[propertyService] getReports fallback", e);
     return { list: FALLBACK_REPORTS };
@@ -133,9 +163,10 @@ export async function getReports(params = {}) {
 export async function getReportsAnalytics(params = {}) {
   try {
     const qs = new URLSearchParams(params).toString();
-    const res = await fetch(`${API_REPORTS}/analytics${qs ? `?${qs}` : ""}`);
-    if (!res.ok) throw new Error("Failed to fetch analytics");
-    return await res.json();
+    const res = await fetch(`${API_REPORTS}/analytics${qs ? `?${qs}` : ""}`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error(`Failed to fetch analytics (${res.status})`);
+    const json = await res.json();
+    return json?.data ?? json;
   } catch (e) {
     console.warn("[propertyService] getReportsAnalytics fallback", e);
     return FALLBACK_ANALYTICS;

@@ -1,16 +1,15 @@
 /**
  * Login Page
  * ----------
- * Tries /api/auth/login then /api/users/login. Backend via Vite proxy (vite.config.js only).
+ * Uses authApi.login; stores token and user (including lastLoginAt from backend).
  * Design: Matches MADHUBAN dashboard (logo, colors #283046, #1f2937)
  */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { API_BASE_URL } from "../config/api";
+import { login } from "../api/authApi";
+import { useAuth } from "../context/AuthContext";
 import logoIcon from "../assets/logo-icon.png";
 import logoText from "../assets/logo-text.png";
-
-const AUTH_PATHS = ["/api/auth/login", "/api/users/login", "/api/login"];
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -18,46 +17,16 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const body = JSON.stringify({ email, password });
-      let res;
-      let data = {};
-      for (const path of AUTH_PATHS) {
-        res = await fetch(`${API_BASE_URL}${path}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body,
-        });
-        data = await res.json().catch(() => ({}));
-        if (res.status !== 404) break;
-      }
-      const lastRes = res;
-      const lastData = data;
-
-      if (lastRes.status === 404) {
-        // No auth endpoint – use dev token from env or demo-token so app is runnable
-        const fallback = import.meta.env.VITE_DEV_TOKEN || "demo-token";
-        localStorage.setItem("token", fallback);
-        navigate("/", { replace: true });
-        return;
-      }
-
-      if (!lastRes.ok) {
-        const msg = lastData?.message || lastData?.error || (lastRes.status === 401 ? "Invalid email or password" : `Request failed (${lastRes.status})`);
-        setError(msg);
-        return;
-      }
-      const token = lastData?.token ?? lastData?.data?.token ?? lastData?.accessToken;
-      if (!token) {
-        setError("Login succeeded but no token received. Check backend response format.");
-        return;
-      }
-      localStorage.setItem("token", token);
+      const res = await login({ email, password });
+      localStorage.setItem("token", res.data.token);
+      setUser(res.data.user);
       navigate("/", { replace: true });
     } catch (err) {
       setError(err?.message || "Network error. Please try again.");

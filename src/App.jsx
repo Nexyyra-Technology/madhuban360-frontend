@@ -4,6 +4,7 @@
  */
 import { Component } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 import Layout from "./layout/Layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/DashboardTab/Dashboard";
@@ -13,6 +14,7 @@ import EditUser from "./pages/UserTab/EditUser";
 import ChangeUserRole from "./pages/UserTab/ChangeUserRole";
 import PropertyManagement from "./pages/PropertyTab/PropertyManagement";
 import TaskManager from "./pages/TaskTab/TaskManager";
+import TaskDetails from "./pages/TaskTab/TaskDetails";
 import HRMS from "./pages/HRMS";
 import SalesAndLease from "./pages/SalesAndLease";
 import FacilityManagement from "./pages/FacilityManagement";
@@ -29,6 +31,7 @@ const PROTECTED_ROUTES = [
   { path: "users/:id", element: <UserSummary /> },
   { path: "properties", element: <PropertyManagement /> },
   { path: "tasks", element: <TaskManager /> },
+  { path: "tasks/:id", element: <TaskDetails /> },
   { path: "hrms", element: <HRMS /> },
   { path: "sales", element: <SalesAndLease /> },
   { path: "facility", element: <FacilityManagement /> },
@@ -70,25 +73,27 @@ class ErrorBoundary extends Component {
 export default function App() {
   return (
     <ErrorBoundary>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          {PROTECTED_ROUTES.map((r) =>
-            r.index ? (
-              <Route key={r.path || "index"} index element={r.element} />
-            ) : (
-              <Route key={r.path} path={r.path} element={r.element} />
-            )
-          )}
-        </Route>
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            {PROTECTED_ROUTES.map((r) =>
+              r.index ? (
+                <Route key={r.path || "index"} index element={r.element} />
+              ) : (
+                <Route key={r.path} path={r.path} element={r.element} />
+              )
+            )}
+          </Route>
+        </Routes>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

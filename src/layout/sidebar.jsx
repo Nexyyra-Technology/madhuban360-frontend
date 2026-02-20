@@ -7,7 +7,6 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("user");
     navigate("/login", { replace: true });
   };
   return (
@@ -44,7 +43,8 @@ export default function Sidebar({ collapsed, setCollapsed }) {
           <div className="sidebar-user">
             <div className="avatar" />
             <div className="sidebar-user-info">
-              <strong>ADMIN</strong>
+              <strong>Harish Sawant</strong>
+              <p>Head Administrator</p>
             </div>
             <button type="button" className="sidebar-logout-btn" title="Logout" aria-label="Logout" onClick={handleLogout}>↗</button>
           </div>

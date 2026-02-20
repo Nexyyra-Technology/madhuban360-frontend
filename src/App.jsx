@@ -3,10 +3,23 @@
  * Protected routes require token in localStorage (see Login.jsx, backend auth).
  */
 import { Component } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import Layout from "./layout/Layout";
 import Login from "./pages/Login";
+import WelcomeScreen from "./pages/Mobile Frontend/WelcomeScreen";
+import SplashScreen from "./pages/Mobile Frontend/SplashScreen";
+import LoginScreen from "./pages/Mobile Frontend/LoginScreen";
+import OtpVerificationScreen from "./pages/Mobile Frontend/OtpVerificationScreen";
+import ChangePasswordScreen from "./pages/Mobile Frontend/ChangePasswordScreen";
+import EndUserDashboard from "./pages/Mobile Frontend/End user screen/EndUserDashboard";
+import EndUserTasksList from "./pages/Mobile Frontend/End user screen/EndUserTasksList";
+import EndUserTaskDetails from "./pages/Mobile Frontend/End user screen/EndUserTaskDetails";
+import EndUserTaskCompletion from "./pages/Mobile Frontend/End user screen/EndUserTaskCompletion";
+import EndUserTaskCompletionSuccess from "./pages/Mobile Frontend/End user screen/EndUserTaskCompletionSuccess";
+import EndUserProfile from "./pages/Mobile Frontend/End user screen/EndUserProfile";
+import EndUserProfileChangePassword from "./pages/Mobile Frontend/End user screen/EndUserProfileChangePassword";
+import EndUserReports from "./pages/Mobile Frontend/End user screen/EndUserReports";
 import Dashboard from "./pages/DashboardTab/Dashboard";
 import UserManagement from "./pages/UserTab/UserManagement";
 import UserSummary from "./pages/UserTab/UserSummary";
@@ -47,6 +60,12 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function MobileProtectedRoute({ children }) {
+  const token = localStorage.getItem("token");
+  if (!token) return <Navigate to="/mobile/login" replace />;
+  return children;
+}
+
 class ErrorBoundary extends Component {
   state = { hasError: false, error: null };
   static getDerivedStateFromError(error) {
@@ -76,6 +95,22 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/mobile" element={<div className="mobile-login-wrapper"><Outlet /></div>}>
+            <Route index element={<Navigate to="/mobile/welcome" replace />} />
+            <Route path="welcome" element={<WelcomeScreen />} />
+            <Route path="splash" element={<SplashScreen />} />
+            <Route path="login" element={<LoginScreen />} />
+            <Route path="otp" element={<OtpVerificationScreen />} />
+            <Route path="change-password" element={<ChangePasswordScreen />} />
+            <Route path="dashboard" element={<MobileProtectedRoute><EndUserDashboard /></MobileProtectedRoute>} />
+            <Route path="tasks" element={<MobileProtectedRoute><EndUserTasksList /></MobileProtectedRoute>} />
+            <Route path="task/:id" element={<MobileProtectedRoute><EndUserTaskDetails /></MobileProtectedRoute>} />
+            <Route path="task/:id/complete" element={<MobileProtectedRoute><EndUserTaskCompletion /></MobileProtectedRoute>} />
+            <Route path="task/:id/success" element={<MobileProtectedRoute><EndUserTaskCompletionSuccess /></MobileProtectedRoute>} />
+            <Route path="profile" element={<MobileProtectedRoute><EndUserProfile /></MobileProtectedRoute>} />
+            <Route path="profile/change-password" element={<MobileProtectedRoute><EndUserProfileChangePassword /></MobileProtectedRoute>} />
+            <Route path="reports" element={<MobileProtectedRoute><EndUserReports /></MobileProtectedRoute>} />
+          </Route>
           <Route
             path="/"
             element={

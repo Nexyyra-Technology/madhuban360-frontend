@@ -1,5 +1,9 @@
 /**
- * Bottom navigation for End User screens
+ * MobileBottomNav – Bottom tab navigation for end user screens
+ * -----------------------------------------------------------------------
+ * - Fixed bottom bar: Dashboard, Tasks, Reports, Profile
+ * - Highlights active route
+ * - Uses pathname to determine active state
  */
 import { useNavigate, useLocation } from "react-router-dom";
 

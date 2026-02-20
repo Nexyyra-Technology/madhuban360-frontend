@@ -1,6 +1,10 @@
 /**
- * End User Tasks List (navigated from bottom nav "Tasks")
- * Backend API: getMyTasks - fetches tasks from database
+ * EndUserTasksList – List of assigned tasks for end user
+ * -----------------------------------------------------------------------
+ * - Fetches tasks via getMyTasks from backend
+ * - Task cards show title, subtitle, description, due time, status
+ * - Click navigates to /mobile/task/:id
+ * - Route: /mobile/tasks (protected)
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";

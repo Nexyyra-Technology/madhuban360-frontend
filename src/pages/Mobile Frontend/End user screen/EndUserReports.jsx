@@ -1,6 +1,9 @@
 /**
- * End User Reports (placeholder for bottom nav)
- * Backend API: Can be extended with GET /api/reports or /api/attendance for end-user reports
+ * EndUserReports – Reports & analytics placeholder
+ * -----------------------------------------------------------------------
+ * - Placeholder screen for bottom nav "Reports"
+ * - Can be extended with GET /api/reports or /api/attendance
+ * - Route: /mobile/reports (protected)
  */
 import { useNavigate } from "react-router-dom";
 import MobileBottomNav from "./MobileBottomNav";

@@ -1,15 +1,21 @@
 /**
- * Welcome Screen – Initial branding screen (Madhuban Group, Facility Management)
- * Auto-advances to Splash after delay; tap to skip.
+ * WelcomeScreen – Initial branding screen for mobile app
+ * -----------------------------------------------------------------------
+ * - Madhuban Group branding with logo and Facility Management tagline
+ * - Auto-advances to Splash screen after 2.5s delay
+ * - Tap anywhere to skip and go to Splash immediately
+ * - Route: /mobile/welcome (default entry for /mobile)
  */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logoIcon from "../../assets/logo-icon.png";
-import logoText from "../../assets/logo-text.png";
+import logoIcon from "../../../assets/logo-icon.png";
+import logoText from "../../../assets/logo-text.png";
 
+// Delay in ms before auto-navigation to Splash
 const SPLASH_DELAY_MS = 2500;
 
 export default function WelcomeScreen() {
+  // ----- State & effects -----
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
 
@@ -21,10 +27,12 @@ export default function WelcomeScreen() {
     return () => clearTimeout(t);
   }, [navigate]);
 
+  // ----- Handlers -----
   function handleSkip() {
     navigate("/mobile/splash", { replace: true });
   }
 
+  // ----- Render -----
   return (
     <div
       className="mobile-screen mobile-welcome"

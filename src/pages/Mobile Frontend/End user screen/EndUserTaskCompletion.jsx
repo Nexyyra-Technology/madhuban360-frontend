@@ -1,7 +1,11 @@
 /**
- * End User Task Completion
- * Direct camera capture only - NO upload option. Live image via mobile camera.
- * Backend API: submitTaskCompletion - POST with FormData (beforePhoto, afterPhoto, notes) to database
+ * EndUserTaskCompletion – Task completion with photo proof
+ * -----------------------------------------------------------------------
+ * - Before/After photos via CameraCapture (live camera only, no upload)
+ * - Optional notes textarea
+ * - submitTaskCompletion POSTs FormData to backend
+ * - On success: navigate to /mobile/task/:id/success
+ * - Route: /mobile/task/:id/complete (protected)
  */
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -33,9 +37,9 @@ export default function EndUserTaskCompletion() {
         afterPhoto,
         notes: notes.trim() || undefined,
       });
-      navigate(`/mobile/task/${id}/complete/success`);
+      navigate(`/mobile/task/${id}/success`);
     } catch (e) {
-      navigate(`/mobile/task/${id}/complete/success`);
+      navigate(`/mobile/task/${id}/success`);
     } finally {
       setSubmitting(false);
     }

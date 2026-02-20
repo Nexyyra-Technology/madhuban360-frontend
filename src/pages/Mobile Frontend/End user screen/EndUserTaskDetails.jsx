@@ -1,6 +1,11 @@
 /**
- * End User Task Details
- * Backend API: getTaskById - fetches task from database
+ * EndUserTaskDetails – Single task view with instructions
+ * -----------------------------------------------------------------------
+ * - Fetches task via getTaskById
+ * - Shows location, due time, instructions, guest request
+ * - Camera capture for before/after proof (optional here)
+ * - Start Task calls updateTaskStatus IN_PROGRESS, navigates to completion
+ * - Route: /mobile/task/:id (protected)
  */
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";

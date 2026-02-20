@@ -1,8 +1,12 @@
 /**
- * End User Profile & Settings
- * Backend API: getCurrentUser - fetches user from database
- * Backend API: updateUserProfile - updates profile in database
- * Change Password: links to mobile change-password flow
+ * EndUserProfile – Profile & settings for logged-in user
+ * -----------------------------------------------------------------------
+ * - Shows avatar, name, ID, zone
+ * - Menu: Edit Profile, Change Password, Help, Digital Pass
+ * - Change Password → /mobile/profile/change-password (uses endUserService)
+ * - Logout clears token, navigates to /mobile/login
+ * - Backend: getCurrentUser; updateUserProfile for edits
+ * - Route: /mobile/profile (protected)
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";

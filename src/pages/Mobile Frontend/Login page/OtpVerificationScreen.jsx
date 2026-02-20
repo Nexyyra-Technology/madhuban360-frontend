@@ -1,16 +1,22 @@
 /**
- * OTP Verification Screen – Shown when user clicks Forgot password
- * Enter 6-digit OTP, Verify Now, Resend code with countdown timer
+ * OtpVerificationScreen – Forgot password OTP flow
+ * -----------------------------------------------------------------------
+ * - Shown after user requests OTP from Login (Forgot password)
+ * - 6-digit OTP input with paste support + numeric keypad
+ * - Verify Now calls verifyOtp; on success navigates to Change Password
+ * - Resend code with 45s countdown cooldown
+ * - Route: /mobile/otp | Mobile stored in sessionStorage (mobileForgotPassword)
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { requestOtp, verifyOtp, normalizeMobile } from "./mobileAuthService";
-import logoIcon from "../../assets/logo-icon.png";
-import logoText from "../../assets/logo-text.png";
+import logoIcon from "../../../assets/logo-icon.png";
+import logoText from "../../../assets/logo-text.png";
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SEC = 45;
 
+// Masks phone for display (e.g. +91 XXXXX X1234)
 function maskPhone(mobile) {
   const n = normalizeMobile(mobile);
   if (!n || n.length < 10) return "+91 XXXXX XXXXX";

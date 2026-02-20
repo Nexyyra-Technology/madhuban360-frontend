@@ -1,6 +1,10 @@
 /**
- * End User Task Completion - Success confirmation
- * Shown after task submission. Data from backend response (task ID, completion time).
+ * EndUserTaskCompletionSuccess – Success confirmation after task submit
+ * -----------------------------------------------------------------------
+ * - Shows success icon, submission ID, completion time
+ * - Go to Next Task → /mobile/tasks
+ * - Back to Dashboard → /mobile/dashboard
+ * - Route: /mobile/task/:id/success (protected)
  */
 import { useNavigate, useParams } from "react-router-dom";
 import MobileBottomNav from "./MobileBottomNav";

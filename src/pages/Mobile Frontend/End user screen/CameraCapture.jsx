@@ -1,6 +1,10 @@
 /**
- * Direct mobile camera capture - no upload, live image only.
- * Uses navigator.mediaDevices.getUserMedia for live preview + capture.
+ * CameraCapture – Direct mobile camera capture
+ * -----------------------------------------------------------------------
+ * - Uses navigator.mediaDevices.getUserMedia for live preview
+ * - No file upload; captures via canvas and returns Blob to onCapture
+ * - States: placeholder (start) → live preview (capture/cancel) → result (retake)
+ * - Props: label, onCapture(blob|null), capturedBlob, compact (boolean)
  */
 import { useState, useEffect, useRef } from "react";
 

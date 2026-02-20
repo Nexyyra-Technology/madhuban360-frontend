@@ -1,11 +1,17 @@
 /**
- * Login Screen – Mobile number + Password, Forgot password link
+ * LoginScreen – Mobile authentication
+ * -----------------------------------------------------------------------
+ * - Mobile number (10-digit) + Password login
+ * - Forgot password link triggers OTP flow via /mobile/otp
+ * - Uses mobileAuthService: mobileLogin, requestOtp
+ * - On success: navigate to /mobile/dashboard
+ * - Route: /mobile/login
  */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { mobileLogin, requestOtp, normalizeMobile } from "./mobileAuthService";
-import logoIcon from "../../assets/logo-icon.png";
-import logoText from "../../assets/logo-text.png";
+import logoIcon from "../../../assets/logo-icon.png";
+import logoText from "../../../assets/logo-text.png";
 
 export default function LoginScreen() {
   const [mobile, setMobile] = useState("");
@@ -14,10 +20,16 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // ----- Handlers -----
   async function handleForgotPassword() {
+    const isEmail = String(mobile || "").includes("@");
     const normalized = normalizeMobile(mobile);
-    if (!normalized || normalized.length < 10) {
+    if (!isEmail && (!normalized || normalized.length < 10)) {
       setError("Please enter your 10-digit mobile number first.");
+      return;
+    }
+    if (isEmail) {
+      setError("Forgot password for email accounts: please use the desktop login or contact support.");
       return;
     }
     setError("");
@@ -69,19 +81,21 @@ export default function LoginScreen() {
             </div>
           ) : null}
           <div className="mobile-field">
-            <label className="mobile-label">Mobile Number</label>
+            <label className="mobile-label">Mobile Number or Email</label>
             <div className="mobile-input-wrap">
               <span className="mobile-input-icon">📱</span>
               <input
-                type="tel"
-                inputMode="numeric"
-                pattern="[0-9]*"
+                type="text"
+                inputMode={mobile.includes("@") ? "email" : "numeric"}
                 value={mobile}
-                onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setMobile(v.includes("@") ? v : v.replace(/\D/g, "").slice(0, 10));
+                }}
                 className="mobile-input"
-                placeholder="Enter 10 digit mobile no"
-                maxLength={10}
+                placeholder="Mobile (10 digits) or Email"
                 required
+                autoComplete="username"
               />
             </div>
           </div>
@@ -113,7 +127,7 @@ export default function LoginScreen() {
           </button>
         </form>
       </div>
-      <p className="mobile-footer-copy">Madhuban Group © 2024</p>
+      <p className="mobile-footer-copy">Madhuban Group © 2026</p>
     </div>
   );
 }

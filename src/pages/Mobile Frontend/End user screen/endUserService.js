@@ -1,9 +1,14 @@
 /**
- * End User API Service
- * --------------------
- * All API calls below connect to backend/database.
- * Backend base: API_BASE_URL from config (proxy in dev -> madhuban360-backend.onrender.com)
- * Database: Backend persists data; responses reflect DB state.
+ * endUserService – End user backend API
+ * -----------------------------------------------------------------------
+ * All calls use token from localStorage (getAuthHeaders).
+ * Backend: API_BASE_URL/api (proxy in dev)
+ *
+ * User: getCurrentUser, updateUserProfile, changePassword
+ * Tasks: getMyTasks, getTaskById, updateTaskStatus, submitTaskCompletion
+ * Attendance: checkIn, getTodayAttendance
+ *
+ * Fallbacks for 404 (demo mode): getFallbackUser, getFallbackTasks, getFallbackTask
  */
 
 import { API_BASE_URL } from "../../../config/api";

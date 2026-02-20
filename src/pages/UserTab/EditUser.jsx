@@ -10,8 +10,10 @@ export default function EditUser() {
     name: "",
     email: "",
     phone: "",
+    username: "",
     jobTitle: "",
     role: "Staff",
+    status: "Active",
     preferredLanguage: "English (US)",
     facilities: [],
   });
@@ -21,24 +23,36 @@ export default function EditUser() {
   useEffect(() => {
     async function load() {
       setError("");
-      const data = await getUserById(id);
-      setUser(data);
-      if (data) {
-        setForm({
+      try {
+        const data = await getUserById(id);
+        setUser(data);
+        if (data) {
+          setForm({
           name: data.name ?? "",
           email: data.email ?? "",
           phone: data.phone ?? "",
+          username: data.username ?? data.email ?? "",
           jobTitle: data.jobTitle ?? "",
           role: data.role ?? "Staff",
+          status: data.status ?? "Active",
           preferredLanguage: data.preferredLanguage ?? "English (US)",
           facilities: data.facilities ?? [],
-        });
+          });
+        }
+      } catch (e) {
+        setError(e?.message || "Failed to load user.");
       }
     }
     load();
   }, [id]);
 
-  if (!user) return null;
+  if (!user && !error) return <div className="p-8">Loading...</div>;
+  if (!user) return (
+    <div className="p-8 bg-[#f5f7fb] min-h-screen">
+      <button onClick={() => navigate(-1)} className="text-sm text-blue-600 mb-6">← Back</button>
+      <p className="text-red-600">{error}</p>
+    </div>
+  );
 
   function setField(key) {
     return (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
@@ -164,6 +178,18 @@ export default function EditUser() {
                 <option>Manager</option>
                 <option>Supervisor</option>
                 <option>Staff</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-600">Status</label>
+              <select
+                value={form.status}
+                onChange={setField("status")}
+                className="w-full border px-3 py-2 rounded-lg mt-1"
+              >
+                <option>Active</option>
+                <option>Suspended</option>
+                <option>Deleted</option>
               </select>
             </div>
             <div>

@@ -1,17 +1,21 @@
 /**
- * App – Route definitions.
- * Protected routes require token in localStorage (see Login.jsx, backend auth).
+ * App – Main router and layout
+ * -----------------------------------------------------------------------
+ * - Protected routes (desktop): require token, else redirect to /login
+ * - Mobile routes: /mobile/* (Welcome, Splash, Login, OTP, ChangePassword, Dashboard, Tasks, Profile, Reports)
+ * - Mobile protected routes: require token, else redirect to /mobile/login
+ * - mobile-login-wrapper: max-width 430px container for mobile-first layout
  */
 import { Component } from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import Layout from "./layout/Layout";
 import Login from "./pages/Login";
-import WelcomeScreen from "./pages/Mobile Frontend/WelcomeScreen";
-import SplashScreen from "./pages/Mobile Frontend/SplashScreen";
-import LoginScreen from "./pages/Mobile Frontend/LoginScreen";
-import OtpVerificationScreen from "./pages/Mobile Frontend/OtpVerificationScreen";
-import ChangePasswordScreen from "./pages/Mobile Frontend/ChangePasswordScreen";
+import WelcomeScreen from "./pages/Mobile Frontend/Login page/WelcomeScreen";
+import SplashScreen from "./pages/Mobile Frontend/Login page/SplashScreen";
+import LoginScreen from "./pages/Mobile Frontend/Login page/LoginScreen";
+import OtpVerificationScreen from "./pages/Mobile Frontend/Login page/OtpVerificationScreen";
+import ChangePasswordScreen from "./pages/Mobile Frontend/Login page/ChangePasswordScreen";
 import EndUserDashboard from "./pages/Mobile Frontend/End user screen/EndUserDashboard";
 import EndUserTasksList from "./pages/Mobile Frontend/End user screen/EndUserTasksList";
 import EndUserTaskDetails from "./pages/Mobile Frontend/End user screen/EndUserTaskDetails";

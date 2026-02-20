@@ -1,6 +1,12 @@
 /**
- * Change Password Screen – Shown after OTP verified (forgot password flow)
- * New Password, Confirm Password, Update Password
+ * ChangePasswordScreen – Forgot password reset (post-OTP)
+ * -----------------------------------------------------------------------
+ * - Shown after OTP verification in forgot-password flow
+ * - New Password + Confirm Password with validation
+ * - Uses mobileAuthService.resetPasswordWithOtp
+ * - Requires sessionStorage: mobileForgotPassword, mobileOtpVerified, mobileResetToken, mobileOtpCode
+ * - On success: clears session data, navigates to /mobile/login
+ * - Route: /mobile/change-password
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";

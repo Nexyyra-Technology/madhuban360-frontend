@@ -1,6 +1,12 @@
 /**
- * End User Dashboard
- * Data from backend: getCurrentUser, getMyTasks, getTodayAttendance, checkIn
+ * EndUserDashboard – Main dashboard for logged-in end users
+ * -----------------------------------------------------------------------
+ * - Shows greeting, user info, location pin
+ * - Attendance: Check In button (GPS badge)
+ * - Task summary: Done vs Remaining counts
+ * - Active tasks list (links to task details)
+ * - Backend: getCurrentUser, getMyTasks, getTodayAttendance, checkIn
+ * - Route: /mobile/dashboard (protected)
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";

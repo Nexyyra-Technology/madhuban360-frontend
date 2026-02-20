@@ -1,6 +1,11 @@
 /**
- * Change Password (from Profile - logged-in user)
- * Backend API: PUT /api/users/me/change-password - updates password in database
+ * EndUserProfileChangePassword – Change password when logged in
+ * -----------------------------------------------------------------------
+ * - Shown from Profile menu (different from forgot-password flow)
+ * - Requires: Current password, New password, Confirm
+ * - Uses endUserService.changePassword (PUT /api/users/me/change-password)
+ * - On success: navigate to /mobile/profile
+ * - Route: /mobile/profile/change-password (protected)
  */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";

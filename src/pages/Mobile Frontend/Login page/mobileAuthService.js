@@ -1,13 +1,19 @@
 /**
- * Mobile Auth API Service
- * -----------------------
- * Integrates with existing backend for mobile login, forgot password, OTP verification, and password reset.
- * Tries multiple endpoint patterns for compatibility.
+ * mobileAuthService – Mobile authentication API
+ * -----------------------------------------------------------------------
+ * Integrates with backend for:
+ *   - mobileLogin(mobile, password) – login, stores token in localStorage
+ *   - requestOtp(mobile) – forgot password OTP request
+ *   - verifyOtp(mobile, otp) – OTP verification, returns resetToken
+ *   - resetPasswordWithOtp(mobile, otp, newPassword, resetToken) – password reset
+ * - Tries multiple endpoint paths for backend compatibility
+ * - Fallback: 404 responses use demo mode (VITE_DEV_TOKEN) for dev
  */
 
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL } from "../../../config/api";
 
-const LOGIN_PATHS = ["/api/auth/login", "/api/auth/mobile-login", "/api/users/login", "/api/login"];
+// Backend may use different paths; try in order until non-404
+const LOGIN_PATHS = ["/api/users/login", "/api/auth/login", "/api/auth/mobile-login", "/api/login"];
 const FORGOT_PATHS = ["/api/auth/forgot-password", "/api/auth/send-otp", "/api/users/forgot-password"];
 const VERIFY_OTP_PATHS = ["/api/auth/verify-otp", "/api/auth/verify", "/api/users/verify-otp"];
 const RESET_PATHS = ["/api/auth/reset-password", "/api/auth/change-password", "/api/users/reset-password"];
@@ -22,23 +28,29 @@ export function normalizeMobile(mobile) {
 
 /**
  * Mobile + Password Login
- * Tries mobile/phone as identifier (backend may map to existing user)
+ * Tries multiple identifier formats (email, username, phone) for backend compatibility
  */
 export async function mobileLogin(mobile, password) {
-  const normalized = normalizeMobile(mobile);
-  if (!normalized || normalized.length < 10) {
-    throw new Error("Please enter a valid 10-digit mobile number.");
-  }
+  const trimmed = String(mobile || "").trim();
+  const normalized = normalizeMobile(trimmed);
+  const isEmail = trimmed.includes("@");
+
   if (!password?.trim()) {
     throw new Error("Password is required.");
   }
+  if (!isEmail && (!normalized || normalized.length < 10)) {
+    throw new Error("Please enter a valid 10-digit mobile number or email.");
+  }
 
-  const body = JSON.stringify({
-    mobile: normalized,
-    phone: normalized,
-    email: normalized + "@mobile", // fallback if backend expects email
+  // Build payload: backend may expect email, username, or phone
+  const payload = {
     password: password.trim(),
-  });
+    email: isEmail ? trimmed : normalized + "@mobile",
+    username: isEmail ? trimmed : normalized,
+    phone: normalized || undefined,
+    mobile: normalized || undefined,
+  };
+  const body = JSON.stringify(payload);
 
   let lastRes;
   let lastData = {};

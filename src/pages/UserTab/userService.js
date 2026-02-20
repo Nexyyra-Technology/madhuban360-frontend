@@ -12,15 +12,31 @@ const API_BASE = `${API_BASE_URL}/api/users`;
 function normalizeUser(u) {
   return {
     ...u,
-    _id: u.id ?? u._id,
+    _id: String(u.id ?? u._id ?? ""),
     role: (u.role ?? "").charAt(0).toUpperCase() + (u.role ?? "").slice(1).toLowerCase(),
     status: (u.status ?? "").charAt(0).toUpperCase() + (u.status ?? "").slice(1).toLowerCase(),
+    lastLogin: u.lastLoginAt ? formatLastLogin(u.lastLoginAt) : (u.lastLogin ?? "-"),
   };
+}
+
+function formatLastLogin(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins} mins ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} days ago`;
 }
 
 export async function getUsers() {
   try {
-    const res = await fetch(API_BASE, {
+    // Fetch all users: backend defaults to limit=10, pass high limit to get all
+    const res = await fetch(`${API_BASE}?limit=9999&page=1`, {
       headers: getAuthHeaders(),
     });
     if (!res.ok) throw new Error("Failed to fetch users");
@@ -35,29 +51,42 @@ export async function getUsers() {
 }
 
 export async function getUserById(id) {
-  try {
-    const res = await fetch(`${API_BASE}/${id}`, {
-      headers: getAuthHeaders(),
-    });
-    if (!res.ok) throw new Error("Failed to fetch user");
-    const json = await res.json();
-    const user = json?.data?.user ?? json?.data ?? json;
-    return normalizeUser(user);
-  } catch (err) {
-    console.error("getUserById error:", err);
-
-    return dummyUsers.find(u => String(u._id) === String(id));
+  const res = await fetch(`${API_BASE}/${id}`, {
+    headers: getAuthHeaders(),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = json?.message ?? json?.error ?? "Failed to fetch user";
+    throw new Error(msg);
   }
+  const user = json?.data?.user ?? json?.data ?? json;
+  return user ? normalizeUser(user) : null;
 }
 
 export async function updateUser(id, data) {
+  // Backend expects: name, email, username, role, status, phone (optional)
+  const payload = {
+    name: data.name?.trim() ?? "",
+    email: data.email?.trim() ?? "",
+    username: data.username ?? data.email ?? "",
+    role: (data.role ?? "staff").toLowerCase(),
+    status: (data.status ?? "active").toLowerCase(),
+    ...(data.phone != null && { phone: data.phone }),
+    ...(data.jobTitle != null && { jobTitle: data.jobTitle }),
+  };
   const res = await fetch(`${API_BASE}/${id}`, {
     method: "PUT",
     headers: getAuthHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify(data),
+    body: JSON.stringify(payload),
   });
 
-  return await readJsonOrThrow(res);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = json?.message ?? json?.error ?? `Request failed (${res.status})`;
+    throw new Error(msg);
+  }
+  const user = json?.data ?? json?.user ?? json;
+  return user ? normalizeUser(user) : json;
 }
 
 export async function deleteUser(id) {

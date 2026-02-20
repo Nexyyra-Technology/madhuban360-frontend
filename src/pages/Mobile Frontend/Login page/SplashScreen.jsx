@@ -1,11 +1,15 @@
 /**
- * Splash Screen – Madhuban Smart Facility Management intro
- * Illustration, branding, and Login CTA.
+ * SplashScreen – Smart Facility Management intro
+ * -----------------------------------------------------------------------
+ * - Shows illustration and Madhuban branding
+ * - Tagline: Manage maintenance, housekeeping & staff efficiently
+ * - Login CTA button navigates to /mobile/login
+ * - Route: /mobile/splash
  */
 import { useNavigate } from "react-router-dom";
-import splashIllustration from "../../assets/splash-illustration.png";
-import logoIcon from "../../assets/logo-icon.png";
-import logoText from "../../assets/logo-text.png";
+import splashIllustration from "../../../assets/splash-illustration.png";
+import logoIcon from "../../../assets/logo-icon.png";
+import logoText from "../../../assets/logo-text.png";
 
 export default function SplashScreen() {
   const navigate = useNavigate();

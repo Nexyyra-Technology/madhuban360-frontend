@@ -1,17 +1,15 @@
 /**
- * EndUserTaskDetails – Single task view with instructions
+ * EndUserTaskDetails – Single task view
  * -----------------------------------------------------------------------
  * - Fetches task via getTaskById
- * - Shows location, due time, instructions, guest request
- * - Camera capture for before/after proof (optional here)
+ * - Shows location, due time, guest request
  * - Start Task calls updateTaskStatus IN_PROGRESS, navigates to completion
  * - Route: /mobile/task/:id (protected)
  */
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MobileBottomNav from "./MobileBottomNav";
-import { getTaskById, updateTaskStatus } from "./endUserService";
-import CameraCapture from "./CameraCapture";
+import { getTaskById, updateTaskStatus, formatTaskEndTime, formatTaskDuration } from "./endUserService";
 
 export default function EndUserTaskDetails() {
   const { id } = useParams();
@@ -19,7 +17,6 @@ export default function EndUserTaskDetails() {
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
-  const [photoBlob, setPhotoBlob] = useState(null);
 
   useEffect(() => {
     if (!id) return;
@@ -52,12 +49,6 @@ export default function EndUserTaskDetails() {
     );
   }
 
-  const instructions = task.instructions || [
-    "Replace bed linens: Strip all bedding including pillowcases and replace with fresh set from cart B.",
-    "Sanitize high-touch surfaces: Focus on remotes, door handles, light switches, and phone handset.",
-    "Restock Minibar: Check water bottles and replace coffee pods if count is below 2.",
-  ];
-
   return (
     <div className="mobile-end-user-screen mobile-task-details">
       <header className="end-user-page-header">
@@ -69,24 +60,9 @@ export default function EndUserTaskDetails() {
         <h2>📍 {task.title}</h2>
         <p className="task-location">📍 {task.location || task.subtitle || "3rd Floor - Deluxe Suite"}</p>
         <h3>{task.description || "Deep Clean & Linen Change"}</h3>
-        <p className="task-due">🕐 Due by: {task.dueBy || task.dueTime || "10:30 AM"}</p>
+        <p className="task-due">🕐 End time: {formatTaskEndTime(task.dueTime || task.dueDate || task.dueBy) ?? "—"}</p>
+        <p className="task-due">⏱ Task duration: {formatTaskDuration(task.durationMinutes) ?? "—"}</p>
       </div>
-
-      <section className="end-user-section">
-        <h3>Instructions</h3>
-        {instructions.map((inst, i) => {
-          const str = typeof inst === "string" ? inst : String(inst);
-          const colon = str.indexOf(":");
-          const title = colon >= 0 ? str.slice(0, colon).trim() : str;
-          const desc = colon >= 0 ? str.slice(colon + 1).trim() : "";
-          return (
-            <div key={i} className="task-instruction-card">
-              <strong>{i + 1}. {title}</strong>
-              {desc && <p>{desc}</p>}
-            </div>
-          );
-        })}
-      </section>
 
       {task.guestRequest && (
         <div className="task-guest-request">
@@ -96,14 +72,6 @@ export default function EndUserTaskDetails() {
       )}
 
       <div className="task-actions-row">
-        <div className="task-photo-action">
-          <CameraCapture
-            label="photo"
-            onCapture={setPhotoBlob}
-            capturedBlob={photoBlob}
-            compact
-          />
-        </div>
         <button
           type="button"
           className="end-user-primary-btn"

@@ -9,17 +9,36 @@ import { createTask } from "./taskService";
 import { getUsers } from "../UserTab/userService";
 import ModalWrapper from "../UserTab/ModalWrapper";
 
-const CATEGORIES = ["Maintenance", "Cleaning", "Inspection", "Preventive Maintenance", "Repair"];
-const LOCATIONS = ["East Wing, Ground Floor", "North Tower, Floor 4, Server Room B", "West Building"];
+const CATEGORIES = ["Cleaning", "Housekeeping"];
+const ZONES = [
+  "Outside main door",
+  "Reception Area HR Desk Employee Desk",
+  "CEO Cabin",
+  "Director Cabin AD",
+  "Director Cabin PB",
+  "Director Cabin PD",
+  "Conference room",
+  "common Area",
+  "pantry",
+  "Washroom Male/Female",
+  "VIP room",
+  "Ajinkya Sir Cabin",
+];
 
 export default function CreateTaskModal({ onClose, onSuccess }) {
   const [taskName, setTaskName] = useState("");
-  const [category, setCategory] = useState("Maintenance");
+  const [category, setCategory] = useState("Cleaning");
   const [description, setDescription] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [priority, setPriority] = useState("HIGH");
-  const [propertyRoom, setPropertyRoom] = useState("East Wing, Ground Floor");
+  const [propertyRoom, setPropertyRoom] = useState(ZONES[0]);
   const [dueDate, setDueDate] = useState("");
+  const [startTimeHour, setStartTimeHour] = useState("9");
+  const [startTimeMin, setStartTimeMin] = useState("00");
+  const [startTimeAmPm, setStartTimeAmPm] = useState("AM");
+  const [endTimeHour, setEndTimeHour] = useState("5");
+  const [endTimeMin, setEndTimeMin] = useState("00");
+  const [endTimeAmPm, setEndTimeAmPm] = useState("PM");
   const [staff, setStaff] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -28,6 +47,26 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
   useEffect(() => {
     getUsers().then((users) => setStaff(Array.isArray(users) ? users : []));
   }, []);
+
+  // Task duration (auto-calculated from start and end time)
+  const taskDuration = (() => {
+    const toMinutes = (h, m, amPm) => {
+      let hour = parseInt(h, 10) || 0;
+      const min = parseInt(m, 10) || 0;
+      if (amPm === "PM" && hour !== 12) hour += 12;
+      if (amPm === "AM" && hour === 12) hour = 0;
+      return hour * 60 + min;
+    };
+    const startM = toMinutes(startTimeHour, startTimeMin, startTimeAmPm);
+    const endM = toMinutes(endTimeHour, endTimeMin, endTimeAmPm);
+    let diff = endM - startM;
+    if (diff <= 0) diff += 24 * 60;
+    const hours = Math.floor(diff / 60);
+    const mins = diff % 60;
+    if (hours === 0) return `${mins} min`;
+    if (mins === 0) return `${hours} hr`;
+    return `${hours} hr ${mins} min`;
+  })();
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -43,6 +82,8 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
       const numericAssigneeId = assigneeId ? parseInt(assigneeId, 10) : undefined;
       const assigneeName = staff.find((u) => u._id === assigneeId)?.name;
       
+      const startTime = `${startTimeHour}:${String(startTimeMin).padStart(2, "0")} ${startTimeAmPm}`;
+      const endTime = `${endTimeHour}:${String(endTimeMin).padStart(2, "0")} ${endTimeAmPm}`;
       await createTask({
         taskName: taskName.trim(),
         description: description.trim() || undefined,
@@ -52,6 +93,8 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
         priority,
         roomNumber: propertyRoom,
         dueDate: dueDate || undefined,
+        startTime,
+        endTime,
         status: "pending",
       });
       onSuccess?.();
@@ -158,14 +201,14 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
           <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3">LOCATION & SCHEDULE</h3>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Property/Room</label>
+              <label className="block text-sm text-gray-600 mb-1">Zones</label>
               <select
                 value={propertyRoom}
                 onChange={(e) => setPropertyRoom(e.target.value)}
                 className="w-full border px-4 py-2 rounded-lg"
               >
-                {LOCATIONS.map((l) => (
-                  <option key={l} value={l}>{l}</option>
+                {ZONES.map((z) => (
+                  <option key={z} value={z}>{z}</option>
                 ))}
               </select>
             </div>
@@ -177,6 +220,85 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
                 onChange={(e) => setDueDate(e.target.value)}
                 className="w-full border px-4 py-2 rounded-lg"
               />
+            </div>
+            {/* Start time & End time - hour, min, AM/PM */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm text-gray-600 mb-1">Start time</label>
+                <div className="flex gap-2 items-center flex-wrap">
+                  <select
+                    value={startTimeHour}
+                    onChange={(e) => setStartTimeHour(e.target.value)}
+                    className="border px-3 py-2 rounded-lg min-w-[4rem]"
+                    aria-label="Start hour"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                      <option key={h} value={String(h)}>{h}</option>
+                    ))}
+                  </select>
+                  <span className="text-gray-500">:</span>
+                  <select
+                    value={startTimeMin}
+                    onChange={(e) => setStartTimeMin(e.target.value)}
+                    className="border px-3 py-2 rounded-lg min-w-[4rem]"
+                    aria-label="Start minute"
+                  >
+                    {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0")).map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={startTimeAmPm}
+                    onChange={(e) => setStartTimeAmPm(e.target.value)}
+                    className="border px-3 py-2 rounded-lg min-w-[4.5rem]"
+                    aria-label="Start AM/PM"
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm text-gray-600 mb-1">End time</label>
+                <div className="flex gap-2 items-center flex-wrap">
+                  <select
+                    value={endTimeHour}
+                    onChange={(e) => setEndTimeHour(e.target.value)}
+                    className="border px-3 py-2 rounded-lg min-w-[4rem]"
+                    aria-label="End hour"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                      <option key={h} value={String(h)}>{h}</option>
+                    ))}
+                  </select>
+                  <span className="text-gray-500">:</span>
+                  <select
+                    value={endTimeMin}
+                    onChange={(e) => setEndTimeMin(e.target.value)}
+                    className="border px-3 py-2 rounded-lg min-w-[4rem]"
+                    aria-label="End minute"
+                  >
+                    {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0")).map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={endTimeAmPm}
+                    onChange={(e) => setEndTimeAmPm(e.target.value)}
+                    className="border px-3 py-2 rounded-lg min-w-[4.5rem]"
+                    aria-label="End AM/PM"
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Task Duration</label>
+              <div className="w-full border border-gray-200 px-4 py-2 rounded-lg bg-gray-50 text-gray-700 font-medium">
+                {taskDuration}
+              </div>
             </div>
           </div>
         </section>

@@ -137,6 +137,21 @@ export async function checkIn(location) {
   return data?.data ?? data;
 }
 
+/** Backend: POST /api/attendance/check-out - record check-out (if backend supports it) */
+export async function checkOut() {
+  const res = await fetch(`${API}/attendance/check-out`, {
+    method: "POST",
+    headers: getAuthHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({}),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 404) return { success: true, checkedIn: false };
+    throw new Error(data?.message || "Check-out failed");
+  }
+  return data?.data ?? data;
+}
+
 /** Backend: GET /api/attendance/today - fetch today's attendance status from database */
 export async function getTodayAttendance() {
   const res = await fetch(`${API}/attendance/today`, { headers: getAuthHeaders() });
@@ -147,7 +162,32 @@ export async function getTodayAttendance() {
 
 /* ---------- HELPERS ---------- */
 
+/** Format duration in minutes to "X min" or "Xh Y min" for display */
+export function formatTaskDuration(minutes) {
+  if (minutes == null || Number.isNaN(Number(minutes))) return null;
+  const m = Math.round(Number(minutes));
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  const mins = m % 60;
+  return mins ? `${h}h ${mins} min` : `${h}h`;
+}
+
+/** Format due date/time as readable end time (e.g. "22 Feb 2026, 11:59 PM") */
+export function formatTaskEndTime(due) {
+  if (due == null || due === "") return null;
+  const d = new Date(due);
+  if (Number.isNaN(d.getTime())) return null;
+  const dateStr = d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  const timeStr = d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
+  const isMidnight = d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0;
+  if (isMidnight) {
+    return `${dateStr}, End of day`;
+  }
+  return `${dateStr}, ${timeStr}`;
+}
+
 function normalizeTask(t) {
+  const durationMin = t.duration_minutes ?? t.durationMinutes ?? t.estimated_duration ?? t.estimatedDuration ?? t.duration ?? null;
   return {
     ...t,
     _id: t.id ?? t._id,
@@ -159,6 +199,7 @@ function normalizeTask(t) {
     status: (t.status ?? "pending").toUpperCase().replace(/\s/g, "_"),
     priority: (t.priority ?? "MEDIUM").toUpperCase(),
     location: t.roomNumber ?? t.locationFloor ?? t.room_number ?? t.location_floor ?? "",
+    durationMinutes: durationMin != null ? Number(durationMin) : null,
   };
 }
 

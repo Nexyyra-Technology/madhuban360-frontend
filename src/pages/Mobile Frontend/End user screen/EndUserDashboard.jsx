@@ -1,8 +1,8 @@
 /**
  * EndUserDashboard – Main dashboard for logged-in end users
  * -----------------------------------------------------------------------
- * - Shows greeting, user info, location pin
- * - Attendance: Check In button (GPS badge)
+ * - Header: logo (circle), user name, role, notification bell
+ * - Attendance: Check In (green) / Check Out (red) toggle
  * - Task summary: Done vs Remaining counts
  * - Active tasks list (links to task details)
  * - Backend: getCurrentUser, getMyTasks, getTodayAttendance, checkIn
@@ -14,18 +14,14 @@ import MobileBottomNav from "./MobileBottomNav";
 import { useAuth } from "../../../context/AuthContext";
 import {
   getCurrentUser,
-  getMyTasks,
   getMyAssignedTasks,
   getTodayAttendance,
   checkIn,
+  checkOut,
+  formatTaskDuration,
+  formatTaskEndTime,
 } from "./endUserService";
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Good Morning";
-  if (h < 17) return "Good Afternoon";
-  return "Good Evening";
-}
+import logoIcon from "../../../assets/logo-icon.png";
 
 function getUserDisplayName(user) {
   if (!user) return "User";
@@ -38,6 +34,13 @@ function getUserDisplayName(user) {
   return "User";
 }
 
+function formatTimeHHMMSS(date) {
+  const h = date.getHours();
+  const m = date.getMinutes();
+  const s = date.getSeconds();
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
 export default function EndUserDashboard() {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
@@ -46,6 +49,15 @@ export default function EndUserDashboard() {
   const [attendance, setAttendance] = useState({ checkedIn: false });
   const [loading, setLoading] = useState(true);
   const [checkingIn, setCheckingIn] = useState(false);
+  const [currentTime, setCurrentTime] = useState(() => formatTimeHHMMSS(new Date()));
+  const [checkInTime, setCheckInTime] = useState(null);
+  const [checkOutTime, setCheckOutTime] = useState(null);
+
+  useEffect(() => {
+    const tick = () => setCurrentTime(formatTimeHHMMSS(new Date()));
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   async function loadTasks() {
     try {
@@ -82,12 +94,27 @@ export default function EndUserDashboard() {
     setCheckingIn(true);
     try {
       await checkIn(user?.location || "Lobby, Building A");
+      setCheckInTime(formatTimeHHMMSS(new Date()));
+      setCheckOutTime(null);
       setAttendance({ checkedIn: true });
-      // Refresh tasks after check-in to show assigned tasks
       const updatedTasks = await getMyAssignedTasks();
       setTasks(Array.isArray(updatedTasks) ? updatedTasks : []);
     } catch (e) {
       setAttendance({ checkedIn: true });
+    } finally {
+      setCheckingIn(false);
+    }
+  }
+
+  async function handleCheckOut() {
+    if (!attendance.checkedIn) return;
+    setCheckingIn(true);
+    try {
+      await checkOut();
+      setCheckOutTime(formatTimeHHMMSS(new Date()));
+      setAttendance({ checkedIn: false });
+    } catch (e) {
+      setAttendance({ checkedIn: false });
     } finally {
       setCheckingIn(false);
     }
@@ -100,28 +127,29 @@ export default function EndUserDashboard() {
   }).length;
 
   const statusStyle = (s) => {
-    if (s === "OVERDUE") return "overdue";
-    if (s === "IN_PROGRESS") return "in-progress";
+    const status = (s || "").toUpperCase();
+    if (status === "COMPLETED") return "completed";
+    if (status === "OVERDUE") return "overdue";
+    if (status === "IN_PROGRESS") return "in-progress";
     return "pending";
   };
 
+  const displayRole = user?.role
+    ? String(user.role).charAt(0).toUpperCase() + String(user.role).slice(1).toLowerCase()
+    : "User";
+
   return (
     <div className="mobile-end-user-screen">
-      <header className="end-user-header">
-        <h1>End User Dashboard</h1>
-        <div className="end-user-profile-row">
-          <div className="end-user-avatar" />
-          <div className="end-user-info">
-            <h2>{getGreeting()}, {getUserDisplayName(user)}</h2>
-            <p className="end-user-location">📍 {user?.location || "Madhuban Group"}</p>
-          </div>
-          <button type="button" className="end-user-notify" aria-label="Notifications">🔔</button>
+      <header className="end-user-header-block">
+        <div className="end-user-logo-circle">
+          <img src={logoIcon} alt="Logo" />
         </div>
+        <div className="end-user-info">
+          <h2 className="end-user-name">{getUserDisplayName(user)}</h2>
+          <p className="end-user-role">{displayRole}</p>
+        </div>
+        <button type="button" className="end-user-notify" aria-label="Notifications">🔔</button>
       </header>
-
-      <div className="end-user-location-card">
-        <div className="end-user-location-pin">📍 Lobby, Building A</div>
-      </div>
 
       <section className="end-user-section">
         <div className="end-user-section-head">
@@ -130,13 +158,23 @@ export default function EndUserDashboard() {
         </div>
         <button
           type="button"
-          className="end-user-checkin-btn"
-          onClick={handleCheckIn}
-          disabled={attendance.checkedIn || checkingIn}
+          className={`end-user-checkin-btn ${attendance.checkedIn ? "check-out" : ""}`}
+          onClick={attendance.checkedIn ? handleCheckOut : handleCheckIn}
+          disabled={checkingIn}
         >
-          {attendance.checkedIn ? "Checked In" : "Check In"}
+          {attendance.checkedIn ? "Check Out" : "Check In"}
         </button>
-        <p className="end-user-shift">Shift starts at 08:00 AM</p>
+        <div className="end-user-shift-row">
+          <span className="end-user-shift">Time: {currentTime}</span>
+          <div className="end-user-check-times">
+            {checkInTime && (
+              <span className="end-user-shift end-user-check-time">Check-in: {checkInTime}</span>
+            )}
+            {checkOutTime && (
+              <span className="end-user-shift end-user-check-time">Check-out: {checkOutTime}</span>
+            )}
+          </div>
+        </div>
       </section>
 
       <section className="end-user-section">
@@ -184,7 +222,8 @@ export default function EndUserDashboard() {
                   <strong>{t.title}</strong>
                   <span>{t.subtitle || t.category}</span>
                   <p>{t.description}</p>
-                  <span className="task-due">🕐 Due: {t.dueTime || t.dueDate || "-"}</span>
+                  <span className="task-due">🕐 End time: {formatTaskEndTime(t.dueTime || t.dueDate) ?? "—"}</span>
+                  <span className="task-due task-duration">⏱ Task duration: {formatTaskDuration(t.durationMinutes) ?? "—"}</span>
                 </div>
                 <span className={`task-tag ${statusStyle(t.status)}`}>
                   {t.status?.replace(/_/g, " ") || "Pending"}

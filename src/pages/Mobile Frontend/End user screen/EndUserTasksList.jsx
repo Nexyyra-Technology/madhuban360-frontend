@@ -9,7 +9,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileBottomNav from "./MobileBottomNav";
-import { getMyAssignedTasks } from "./endUserService";
+import { getMyAssignedTasks, formatTaskDuration, formatTaskEndTime } from "./endUserService";
 
 export default function EndUserTasksList() {
   const navigate = useNavigate();
@@ -24,8 +24,10 @@ export default function EndUserTasksList() {
   }, []);
 
   const statusStyle = (s) => {
-    if (s === "OVERDUE") return "overdue";
-    if (s === "IN_PROGRESS") return "in-progress";
+    const status = (s || "").toUpperCase();
+    if (status === "COMPLETED") return "completed";
+    if (status === "OVERDUE") return "overdue";
+    if (status === "IN_PROGRESS") return "in-progress";
     return "pending";
   };
 
@@ -51,7 +53,8 @@ export default function EndUserTasksList() {
                 <strong>{t.title}</strong>
                 <span>{t.subtitle || t.category}</span>
                 <p>{t.description}</p>
-                <span className="task-due">🕐 Due: {t.dueTime || t.dueDate || "-"}</span>
+                <span className="task-due">🕐 End time: {formatTaskEndTime(t.dueTime || t.dueDate) ?? "—"}</span>
+                <span className="task-due task-duration">⏱ Task duration: {formatTaskDuration(t.durationMinutes) ?? "—"}</span>
               </div>
               <span className={`task-tag ${statusStyle(t.status)}`}>
                 {t.status?.replace(/_/g, " ") || "Pending"}

@@ -24,11 +24,11 @@ import EndUserTaskCompletionSuccess from "./pages/Mobile Frontend/End user scree
 import EndUserProfile from "./pages/Mobile Frontend/End user screen/EndUserProfile";
 import EndUserProfileChangePassword from "./pages/Mobile Frontend/End user screen/EndUserProfileChangePassword";
 import EndUserReports from "./pages/Mobile Frontend/End user screen/EndUserReports";
-import ManagerDashboard from "./pages/Mobile Frontend/manager screen/ManagerDashboard";
-import ManagerTaskOverview from "./pages/Mobile Frontend/manager screen/ManagerTaskOverview";
-import ManagerSupervisors from "./pages/Mobile Frontend/manager screen/ManagerSupervisors";
-import ManagerReports from "./pages/Mobile Frontend/manager screen/ManagerReports";
-import ManagerProfile from "./pages/Mobile Frontend/manager screen/ManagerProfile";
+import ManagerDashboard from "./pages/Mobile Frontend/manager Screen/ManagerDashboard";
+import ManagerTaskOverview from "./pages/Mobile Frontend/manager Screen/ManagerTaskOverview";
+import ManagerSupervisors from "./pages/Mobile Frontend/manager Screen/ManagerSupervisors";
+import ManagerReports from "./pages/Mobile Frontend/manager Screen/ManagerReports";
+import ManagerProfile from "./pages/Mobile Frontend/manager Screen/ManagerProfile";
 import Dashboard from "./pages/DashboardTab/Dashboard";
 import UserManagement from "./pages/UserTab/UserManagement";
 import UserSummary from "./pages/UserTab/UserSummary";

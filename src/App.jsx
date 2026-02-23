@@ -30,6 +30,7 @@ import ManagerTaskOverview from "./pages/Mobile Frontend/manager Screen/ManagerT
 import ManagerSupervisors from "./pages/Mobile Frontend/manager Screen/ManagerSupervisors";
 import ManagerReports from "./pages/Mobile Frontend/manager Screen/ManagerReports";
 import ManagerProfile from "./pages/Mobile Frontend/manager Screen/ManagerProfile";
+import NotificationsScreen from "./pages/Mobile Frontend/NotificationsScreen";
 import Dashboard from "./pages/DashboardTab/Dashboard";
 import UserManagement from "./pages/UserTab/UserManagement";
 import UserSummary from "./pages/UserTab/UserSummary";
@@ -144,6 +145,7 @@ export default function App() {
             <Route path="task/:id/complete" element={<MobileProtectedRoute><MobileStaffRoute><EndUserTaskCompletion /></MobileStaffRoute></MobileProtectedRoute>} />
             <Route path="task/:id/success" element={<MobileProtectedRoute><MobileStaffRoute><EndUserTaskCompletionSuccess /></MobileStaffRoute></MobileProtectedRoute>} />
             <Route path="profile" element={<MobileProtectedRoute><MobileStaffRoute><EndUserProfile /></MobileStaffRoute></MobileProtectedRoute>} />
+            <Route path="notifications" element={<MobileProtectedRoute><MobileStaffRoute><NotificationsScreen /></MobileStaffRoute></MobileProtectedRoute>} />
             <Route path="profile/change-password" element={<MobileProtectedRoute><MobileStaffRoute><EndUserProfileChangePassword /></MobileStaffRoute></MobileProtectedRoute>} />
             <Route path="reports" element={<MobileProtectedRoute><MobileStaffRoute><EndUserReports /></MobileStaffRoute></MobileProtectedRoute>} />
             <Route path="manager/dashboard" element={<MobileProtectedRoute><MobileManagerRoute><ManagerDashboard /></MobileManagerRoute></MobileProtectedRoute>} />
@@ -151,6 +153,7 @@ export default function App() {
             <Route path="manager/supervisors" element={<MobileProtectedRoute><MobileManagerRoute><ManagerSupervisors /></MobileManagerRoute></MobileProtectedRoute>} />
             <Route path="manager/reports" element={<MobileProtectedRoute><MobileManagerRoute><ManagerReports /></MobileManagerRoute></MobileProtectedRoute>} />
             <Route path="manager/profile" element={<MobileProtectedRoute><MobileManagerRoute><ManagerProfile /></MobileManagerRoute></MobileProtectedRoute>} />
+            <Route path="manager/notifications" element={<MobileProtectedRoute><MobileManagerRoute><NotificationsScreen /></MobileManagerRoute></MobileProtectedRoute>} />
           </Route>
           <Route
             path="/"

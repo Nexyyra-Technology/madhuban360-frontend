@@ -1,9 +1,8 @@
 /**
- * Task Details (Figma: Task Details)
- * ----------------------------------
- * Full task view: title, status, assigned by/to, priority rationale, description,
- * location, category, timeline, activity log. Actions: Edit, Share, Put on Hold, Complete.
- * Backend: Task loaded via getTaskById(); updates via updateTask/updateTaskStatus.
+ * Task Details (Figma layout)
+ * ---------------------------
+ * Modal-style view: header, two-column body (assignment, priority, description, timeline, activity log), footer.
+ * Data from backend: getTaskById()
  */
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -12,17 +11,77 @@ import EditTaskModal from "./EditTaskModal";
 import SuccessToast from "./SuccessToast";
 
 const STATUS_LABELS = { TO_DO: "To Do", IN_PROGRESS: "In Progress", REVIEW: "Review", COMPLETED: "Completed" };
+const PRIORITY_RATIONALE = {
+  HIGH: "Risk of equipment failure and potential downtime. Immediate inspection required.",
+  URGENT: "Urgent attention required to prevent escalation.",
+  MEDIUM: "Standard priority task requiring timely completion.",
+  LOW: "Low priority. Complete when capacity allows.",
+  NORMAL: "Normal priority task.",
+};
+
+function formatDateTime(dateStr, timeStr) {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const date = `${months[d.getMonth()]} ${d.getDate()}`;
+  if (timeStr) {
+    const t = String(timeStr).trim();
+    if (/^\d{1,2}:\d{2}$/.test(t)) {
+      const [h, m] = t.split(":").map(Number);
+      const hour = h % 12 || 12;
+      const amPm = h >= 12 ? "PM" : "AM";
+      return `${date}, ${hour}:${String(m).padStart(2, "0")} ${amPm}`;
+    }
+    return `${date}, ${t}`;
+  }
+  return date;
+}
+
+function formatDuration(mins) {
+  if (mins == null) return "—";
+  const m = parseInt(mins, 10) || 0;
+  if (m < 60) return `${m} Mins`;
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  return r ? `${h} Hr ${r} Mins` : `${h} Hr`;
+}
+
+function buildActivityLog(task) {
+  const log = task.activityLog && Array.isArray(task.activityLog) ? [...task.activityLog] : [];
+  if (log.length) return log;
+
+  const assigneeName = task.assignee?.name || "Assignee";
+  const assignedByName = task.assignedBy?.name || "Creator";
+  const status = (task.status || "TO_DO").replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+
+  if (task.status === "COMPLETED") {
+    log.push({ type: "completed", title: "Completed", desc: `${assigneeName} completed the task`, time: task.completedAt || "—", active: true });
+  }
+  if (task.status === "IN_PROGRESS" || task.status === "REVIEW" || task.status === "COMPLETED") {
+    log.push({ type: "in_progress", title: "In Progress", desc: `${assigneeName} started work`, time: "—", active: task.status === "IN_PROGRESS" });
+  }
+  log.push({ type: "assigned", title: "Assigned", desc: `Assigned to ${assigneeName}`, time: "—", active: false });
+  log.push({ type: "created", title: "Created", desc: `Ticket created by ${assignedByName}`, time: task.createdAt || "—", active: false });
+
+  return log.reverse();
+}
 
 export default function TaskDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [task, setTask] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
     if (!id) return;
-    getTaskById(id).then((t) => setTask(t || null));
+    setLoading(true);
+    getTaskById(id)
+      .then((t) => setTask(t || null))
+      .catch(() => setTask(null))
+      .finally(() => setLoading(false));
   }, [id]);
 
   async function handleComplete() {
@@ -39,163 +98,226 @@ export default function TaskDetails() {
   function handleEditSuccess(updated) {
     setTask(updated);
     setShowEdit(false);
-    setToast({ title: "Success!", message: "Updated Successfully" });
+    setToast({ title: "Success!", message: "Updated successfully." });
   }
 
-  if (!task) return <div className="p-8">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="task-details-page">
+        <div className="task-details-loading">Loading task...</div>
+      </div>
+    );
+  }
+
+  if (!task) {
+    return (
+      <div className="task-details-page">
+        <div className="task-details-loading">Task not found</div>
+        <button type="button" onClick={() => navigate("/tasks")} className="task-details-back">
+          ← Back to tasks
+        </button>
+      </div>
+    );
+  }
 
   const statusLabel = STATUS_LABELS[task.status] || task.status;
   const assigneeName = task.assignee?.name || "Unassigned";
+  const assigneeRole = task.assignee?.jobTitle ?? task.assignee?.role ?? "Staff";
   const assigneeInitials = assigneeName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
   const assignedByName = task.assignedBy?.name || "—";
+  const assignedByRole = task.assignedBy?.jobTitle ?? task.assignedBy?.role ?? "Manager";
+  const assignedByInitials = assignedByName === "—" ? "—" : assignedByName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+  const instructions = task.instructions && Array.isArray(task.instructions) ? task.instructions : [];
+  const locationDisplay = task.roomNumber || task.locationFloor || task.location || "—";
+  const categoryDisplay = task.category || task.departmentName || "—";
+  const priorityRationale = task.priorityRationale ?? PRIORITY_RATIONALE[task.priority] ?? "";
+  const activityLog = buildActivityLog(task);
+
+  const startTimeFormatted = task.startTime ? formatDateTime(task.dueDate, task.startTime) : (task.dueDate ? formatDateTime(task.dueDate) : "—");
+  const dueTimeFormatted = task.endTime ? formatDateTime(task.dueDate, task.endTime) : (task.dueDate ? formatDateTime(task.dueDate) : "—");
+  const durationFormatted = formatDuration(task.timeDuration);
 
   return (
-    <div className="p-8 bg-[#f5f7fb] min-h-screen">
-      <button onClick={() => navigate("/tasks")} className="text-sm text-blue-600 mb-6">← Back</button>
-
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Left column */}
-        <div className="flex-1 space-y-6">
-          {/* Task title and status */}
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h1 className="text-xl font-bold text-gray-900">{task.title} #{task._id}</h1>
-            <div className="flex items-center gap-2 mt-2">
-              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">{statusLabel}</span>
-              <span className="text-gray-400">•</span>
-              <span className="text-sm text-gray-500">Updated 20 mins ago</span>
-            </div>
-          </div>
-
-          {/* Assigned by / Assigned to */}
-          <div className="flex gap-4">
-            <div className="flex-1 bg-white rounded-xl p-4 shadow-sm">
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">ASSIGNED BY</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">{assignedByName.slice(0, 2).toUpperCase()}</div>
-                <div>
-                  <p className="font-medium">{assignedByName}</p>
-                  <p className="text-sm text-gray-500">Facility Manager</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex-1 bg-white rounded-xl p-4 shadow-sm">
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">ASSIGNED TO</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">{assigneeInitials}</div>
-                <div>
-                  <p className="font-medium">{assigneeName}</p>
-                  <p className="text-sm text-gray-500">Senior Technician</p>
-                </div>
+    <div className="task-details-page">
+      <div className="task-details-modal">
+        {/* Modal Header */}
+        <header className="task-details-header">
+          <div className="task-details-header-left">
+            <div className="task-details-icon-wrap" />
+            <div>
+              <h1 className="task-details-title">{task.title}</h1>
+              <div className="task-details-header-meta">
+                <span className={`task-details-status-badge task-details-status-${(task.status || "").toLowerCase().replace("_", "-")}`}>
+                  {statusLabel}
+                </span>
+                <span className="task-details-sep">•</span>
+                <span className="task-details-updated">Updated 20 mins ago</span>
               </div>
             </div>
           </div>
-
-          {/* High priority rationale - Figma */}
-          {task.priority === "HIGH" && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-              <p className="font-semibold text-red-700 flex items-center gap-2">! HIGH PRIORITY</p>
-              <p className="text-sm text-gray-700 mt-2">
-                Risk of equipment failure and potential downtime. Immediate inspection required.
-              </p>
-            </div>
-          )}
-
-          {/* Task Description - Figma */}
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-2">Task Description</h3>
-            <p className="text-gray-600">{task.description}</p>
-          </div>
-
-          {/* Location & Category - Figma */}
-          <div className="flex gap-4 text-sm">
-            <div className="flex items-center gap-2 text-gray-600">
-              <span>📍</span>
-              <span>{task.location || "—"}</span>
-            </div>
-            <div className="flex items-center gap-2 text-gray-600">
-              <span>🏠</span>
-              <span>{task.category || "—"}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Right column - Timeline & Activity */}
-        <div className="w-full lg:w-[340px] space-y-6">
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-4">Timeline & Schedule</h3>
-            <div className="space-y-3">
-              <p className="text-sm text-gray-600">📅 START TIME: Oct 24, 08:00 AM</p>
-              <p className="text-sm text-gray-600">✓ DUE DATE: {task.dueDate || "—"}</p>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-4">Activity Log</h3>
-            <ul className="space-y-3">
-              <li className="flex gap-3">
-                <span className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
-                <div>
-                  <p className="text-sm font-medium">In Progress</p>
-                  <p className="text-xs text-gray-500">Mike Ross started work — Today, 08:45 AM</p>
-                </div>
-              </li>
-              <li className="flex gap-3">
-                <span className="w-2 h-2 rounded-full bg-gray-300 mt-1.5" />
-                <div>
-                  <p className="text-sm font-medium">Assigned</p>
-                  <p className="text-xs text-gray-500">Assigned to Mike Ross — Today, 08:15 AM</p>
-                </div>
-              </li>
-              <li className="flex gap-3">
-                <span className="w-2 h-2 rounded-full bg-gray-300 mt-1.5" />
-                <div>
-                  <p className="text-sm font-medium">Created</p>
-                  <p className="text-xs text-gray-500">Ticket created by Alex Rivera — Today, 08:00 AM</p>
-                </div>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer actions - Figma: Edit, Share, Put on Hold, Complete */}
-      <div className="mt-8 pt-6 border-t flex flex-wrap justify-between items-center gap-4">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowEdit(true)}
-            className="px-4 py-2 border rounded-lg flex items-center gap-2"
-          >
-            ✏️ Edit Task
+          <button type="button" onClick={() => navigate("/tasks")} className="task-details-close" aria-label="Close">
+            ✕
           </button>
-          <button className="px-4 py-2 border rounded-lg flex items-center gap-2">
-            Share
-          </button>
+        </header>
+
+        {/* Modal Body - Scrollable */}
+        <div className="task-details-body">
+          {/* Left Column */}
+          <div className="task-details-main">
+            {/* Assignment Info */}
+            <div className="task-details-assignment">
+              <div className="task-details-card task-details-card-assign">
+                <span className="task-details-label">ASSIGNED BY</span>
+                <div className="task-details-user">
+                  <div className="task-details-avatar">{assignedByInitials}</div>
+                  <div>
+                    <div className="task-details-user-name">{assignedByName}</div>
+                    <div className="task-details-user-role">{assignedByRole}</div>
+                  </div>
+                </div>
+              </div>
+              <div className="task-details-card task-details-card-assign">
+                <span className="task-details-label">ASSIGNED TO</span>
+                <div className="task-details-user">
+                  <div className="task-details-avatar">{assigneeInitials}</div>
+                  <div>
+                    <div className="task-details-user-name">{assigneeName}</div>
+                    <div className="task-details-user-role">{assigneeRole}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Priority Rationale */}
+            {(task.priority === "HIGH" || task.priority === "URGENT") && (
+              <div className="task-details-priority-rationale">
+                <div className="task-details-priority-bar" />
+                <div>
+                  <div className="task-details-priority-title">{task.priority} PRIORITY</div>
+                  <div className="task-details-priority-text">{priorityRationale}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Task Description */}
+            <div className="task-details-card task-details-description-card">
+              <h3 className="task-details-section-title">
+                <span className="task-details-section-icon" />
+                Task Description
+              </h3>
+              <p className="task-details-desc">{task.description || "—"}</p>
+              {instructions.length > 0 && (
+                <ul className="task-details-instructions">
+                  {instructions.map((inst, i) => (
+                    <li key={i}>
+                      <span className="task-details-bullet">•</span>
+                      <span>{inst.title ? `${inst.title}: ${inst.description || ""}` : inst.description || inst}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Technical Details */}
+            <div className="task-details-tech-grid">
+              <div className="task-details-tech-item">
+                <span className="task-details-tech-icon">📍</span>
+                <div>
+                  <span className="task-details-label">LOCATION</span>
+                  <span className="task-details-tech-value">{locationDisplay}</span>
+                </div>
+              </div>
+              <div className="task-details-tech-item">
+                <span className="task-details-tech-icon">📋</span>
+                <div>
+                  <span className="task-details-label">CATEGORY</span>
+                  <span className="task-details-tech-value">{categoryDisplay}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Sidebar */}
+          <aside className="task-details-sidebar">
+            {/* Timeline & Schedule */}
+            <div className="task-details-card task-details-schedule-card">
+              <h3 className="task-details-sidebar-title">Timeline & Schedule</h3>
+              <div className="task-details-schedule-list">
+                <div className="task-details-schedule-row">
+                  <div>
+                    <span className="task-details-label">START TIME</span>
+                    <span className="task-details-schedule-value">{startTimeFormatted}</span>
+                  </div>
+                  <span className="task-details-schedule-icon">📅</span>
+                </div>
+                <div className="task-details-schedule-row">
+                  <div>
+                    <span className="task-details-label">DUE TIME</span>
+                    <span className="task-details-schedule-value">{dueTimeFormatted}</span>
+                  </div>
+                  <span className="task-details-schedule-icon">📅</span>
+                </div>
+                <div className="task-details-schedule-row">
+                  <div>
+                    <span className="task-details-label">DURATION</span>
+                    <span className="task-details-schedule-value">{durationFormatted}</span>
+                  </div>
+                  <span className="task-details-schedule-icon">⏱</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Activity Log */}
+            <div className="task-details-card task-details-activity-card">
+              <h3 className="task-details-sidebar-title">Activity Log</h3>
+              <div className="task-details-activity-timeline">
+                {activityLog.map((item, i) => (
+                  <div key={i} className={`task-details-activity-item ${item.active ? "active" : ""}`}>
+                    <div className="task-details-activity-dot" />
+                    <div>
+                      <div className="task-details-activity-title">{item.title}</div>
+                      <div className="task-details-activity-desc">{item.desc}</div>
+                      <div className="task-details-activity-time">{item.time || "—"}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
         </div>
-        <div className="flex gap-2">
-          <button className="px-4 py-2 text-gray-600 border rounded-lg">Put on Hold</button>
-          <button
-            onClick={handleComplete}
-            disabled={task.status === "COMPLETED"}
-            className="px-4 py-2 bg-[#1f2a44] text-white rounded-lg disabled:opacity-50"
-          >
-            Complete Task
-          </button>
-        </div>
+
+        {/* Modal Footer */}
+        <footer className="task-details-footer">
+          <div className="task-details-footer-left">
+            <button type="button" onClick={() => setShowEdit(true)} className="task-details-btn task-details-btn-secondary">
+              ✏️ Edit Task
+            </button>
+            <button type="button" className="task-details-btn task-details-btn-secondary">
+              Share
+            </button>
+          </div>
+          <div className="task-details-footer-right">
+            <button type="button" className="task-details-btn task-details-btn-ghost">
+              Put on Hold
+            </button>
+            <button
+              type="button"
+              onClick={handleComplete}
+              disabled={task.status === "COMPLETED"}
+              className="task-details-btn task-details-btn-primary"
+            >
+              Complete Task
+            </button>
+          </div>
+        </footer>
       </div>
 
       {showEdit && (
-        <EditTaskModal
-          task={task}
-          onClose={() => setShowEdit(false)}
-          onSuccess={handleEditSuccess}
-        />
+        <EditTaskModal task={task} onClose={() => setShowEdit(false)} onSuccess={handleEditSuccess} />
       )}
 
       {toast && (
-        <SuccessToast
-          title={toast.title}
-          message={toast.message}
-          onClose={() => setToast(null)}
-        />
+        <SuccessToast title={toast.title} message={toast.message} onClose={() => setToast(null)} />
       )}
     </div>
   );

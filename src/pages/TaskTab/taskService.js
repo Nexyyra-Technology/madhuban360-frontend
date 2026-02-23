@@ -24,10 +24,16 @@ function normalizeTask(t) {
     _id: t.id ?? t._id,
     title: t.taskName ?? t.title ?? t.task_name ?? "Untitled",
     assignee: t.assignee ?? (t.assigneeName ? { name: t.assigneeName } : null),
+    assigneeId: t.assigneeId ?? t.assignee?.id ?? t.assignee?._id ?? null,
+    assignedBy: t.assignedBy ?? (t.assignedByName ? { name: t.assignedByName } : null),
     status,
     priority: (t.priority ?? "normal").toUpperCase(),
     dueDate: t.dueDate ? formatDueDate(t.dueDate) : t.dueDate,
     completedAt: t.completedAt ? formatDueDate(t.completedAt) : t.completedAt,
+    instructions: Array.isArray(t.instructions) ? t.instructions : [],
+    roomNumber: t.roomNumber ?? t.room_number ?? null,
+    locationFloor: t.locationFloor ?? t.location_floor ?? t.location ?? null,
+    category: t.category ?? t.departmentName ?? t.department ?? null,
   };
 }
 
@@ -77,20 +83,12 @@ export async function getTaskById(id) {
 
 /** Backend: POST /api/tasks - create new task; body saved to backend/database */
 export async function createTask(data) {
-  try {
-    const res = await fetch(API_BASE, {
-      method: "POST",
-      headers: getAuthHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(data),
-    });
-    return await readJsonOrThrow(res);
-  } catch (err) {
-    // Fallback: when backend unavailable (404 etc), add locally so app stays runnable
-    const id = `local-${Date.now()}`;
-    const task = normalizeTask({ _id: id, ...data, status: data.status || "TO_DO" });
-    localTasks.push(task);
-    return { data: task, id };
-  }
+  const res = await fetch(API_BASE, {
+    method: "POST",
+    headers: getAuthHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data),
+  });
+  return await readJsonOrThrow(res);
 }
 
 /** Backend: PUT /api/tasks/:id - update task; changes saved to backend/database */

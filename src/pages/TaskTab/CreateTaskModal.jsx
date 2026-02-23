@@ -1,35 +1,57 @@
 /**
- * Create Task Modal (Figma: Create New Task)
- * ------------------------------------------
- * Sections: BASIC INFO, ASSIGNMENT & PRIORITY, LOCATION & SCHEDULE, ATTACHMENTS
- * Backend: POST /api/tasks - creates task, data saved to backend/database
+ * Create Task Modal
+ * -----------------
+ * Backend: POST {{API_BASE_URL}}/api/tasks
+ * Payload: taskName, departmentId, description, assigneeId, priority, propertyId,
+ *          dueDate, startTime, endTime, timeDuration, status, roomNumber, locationFloor,
+ *          instructions, guestRequest, attachments, frequency
  */
 import { useState, useEffect } from "react";
 import { createTask } from "./taskService";
 import { getUsersForAssignee, getDepartments } from "../UserTab/userService";
+import { getProperties } from "../PropertyTab/propertyService";
 import ModalWrapper from "../UserTab/ModalWrapper";
+
 const ZONES = [
-  "Outside main door",
-  "Reception Area HR Desk Employee Desk",
-  "CEO Cabin",
-  "Director Cabin AD",
-  "Director Cabin PB",
-  "Director Cabin PD",
-  "Conference room",
-  "common Area",
-  "pantry",
-  "Washroom Male/Female",
-  "VIP room",
-  "Ajinkya Sir Cabin",
+  "Outside main door", "Reception Area HR Desk Employee Desk", "CEO Cabin",
+  "Director Cabin AD", "Director Cabin PB", "Director Cabin PD", "Conference room",
+  "common Area", "pantry", "Washroom Male/Female", "VIP room", "Ajinkya Sir Cabin",
 ];
+
+const FREQUENCIES = [
+  { value: "", label: "None" },
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+];
+
+function to24h(h, m, amPm) {
+  let hour = parseInt(h, 10) || 0;
+  const min = parseInt(m, 10) || 0;
+  if (amPm === "PM" && hour !== 12) hour += 12;
+  if (amPm === "AM" && hour === 12) hour = 0;
+  return `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}
+
+function toMinutes(h, m, amPm) {
+  let hour = parseInt(h, 10) || 0;
+  const min = parseInt(m, 10) || 0;
+  if (amPm === "PM" && hour !== 12) hour += 12;
+  if (amPm === "AM" && hour === 12) hour = 0;
+  return hour * 60 + min;
+}
 
 export default function CreateTaskModal({ onClose, onSuccess }) {
   const [taskName, setTaskName] = useState("");
-  const [category, setCategory] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
   const [description, setDescription] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [priority, setPriority] = useState("HIGH");
-  const [propertyRoom, setPropertyRoom] = useState(ZONES[0]);
+  const [propertyId, setPropertyId] = useState("");
+  const [roomNumber, setRoomNumber] = useState(ZONES[0]);
+  const [locationFloor, setLocationFloor] = useState("");
+  const [guestRequest, setGuestRequest] = useState("");
+  const [frequency, setFrequency] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [startTimeHour, setStartTimeHour] = useState("9");
   const [startTimeMin, setStartTimeMin] = useState("00");
@@ -38,53 +60,43 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
   const [endTimeMin, setEndTimeMin] = useState("00");
   const [endTimeAmPm, setEndTimeAmPm] = useState("PM");
   const [staff, setStaff] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [departments, setDepartments] = useState([]);
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Backend: fetch users for assignee dropdown (GET /api/users?page=1&limit=10)
   useEffect(() => {
-    getUsersForAssignee(1, 10).then((users) => setStaff(Array.isArray(users) ? users : []));
-  }, []);
-
-  // Backend: fetch departments for Category dropdown (GET /api/departments)
-  useEffect(() => {
-    let cancelled = false;
-    getDepartments()
-      .then((list) => {
-        if (!cancelled && Array.isArray(list)) {
-          setCategories(list);
-          setCategory((prev) => {
-            if (prev) return prev;
-            const first = list.find((d) => (d.name ?? "").trim());
-            return first ? first.name.trim() : "";
-          });
-        }
+    Promise.all([
+      getUsersForAssignee(1, 100).then((u) => Array.isArray(u) ? u : []),
+      getDepartments().then((d) => Array.isArray(d) ? d : []),
+      getProperties().then((p) => Array.isArray(p) ? p : []),
+    ])
+      .then(([users, depts, props]) => {
+        setStaff(users);
+        setDepartments(depts);
+        setProperties(props);
+        if (!departmentId && depts.length) setDepartmentId(String(depts[0]?.id ?? depts[0]?._id ?? ""));
+        if (!propertyId && props.length) setPropertyId(String(props[0]?.id ?? props[0]?._id ?? ""));
       })
-      .catch(() => { if (!cancelled) setCategories([]); })
-      .finally(() => { if (!cancelled) setCategoriesLoading(false); });
-    return () => { cancelled = true; };
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  // Task duration (auto-calculated from start and end time)
-  const taskDuration = (() => {
-    const toMinutes = (h, m, amPm) => {
-      let hour = parseInt(h, 10) || 0;
-      const min = parseInt(m, 10) || 0;
-      if (amPm === "PM" && hour !== 12) hour += 12;
-      if (amPm === "AM" && hour === 12) hour = 0;
-      return hour * 60 + min;
-    };
+  const timeDurationMins = (() => {
     const startM = toMinutes(startTimeHour, startTimeMin, startTimeAmPm);
     const endM = toMinutes(endTimeHour, endTimeMin, endTimeAmPm);
     let diff = endM - startM;
     if (diff <= 0) diff += 24 * 60;
-    const hours = Math.floor(diff / 60);
-    const mins = diff % 60;
-    if (hours === 0) return `${mins} min`;
-    if (mins === 0) return `${hours} hr`;
-    return `${hours} hr ${mins} min`;
+    return diff;
+  })();
+
+  const taskDurationLabel = (() => {
+    const h = Math.floor(timeDurationMins / 60);
+    const m = timeDurationMins % 60;
+    if (h === 0) return `${m} min`;
+    if (m === 0) return `${h} hr`;
+    return `${h} hr ${m} min`;
   })();
 
   async function handleCreate(e) {
@@ -94,31 +106,43 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
       setError("Task name is required");
       return;
     }
+    const deptId = parseInt(departmentId, 10);
+    const propId = parseInt(propertyId, 10);
+    const asnId = assigneeId ? parseInt(assigneeId, 10) : null;
+    if (!Number.isInteger(deptId) || deptId < 1) {
+      setError("Please select a department");
+      return;
+    }
+    if (!Number.isInteger(propId) || propId < 1) {
+      setError("Please select a property");
+      return;
+    }
+    if (!asnId || asnId < 1) {
+      setError("Please select an assignee");
+      return;
+    }
     try {
       setSaving(true);
-      // Backend: POST /api/tasks - payload saved to backend/database
-      // Send assigneeId as number so backend persists it (never send undefined - it gets stripped and backend gets null)
-      const rawId = assigneeId != null && assigneeId !== "" ? String(assigneeId).trim() : "";
-      const numericAssigneeId = rawId === "" ? null : parseInt(rawId, 10);
-      const validAssigneeId = Number.isInteger(numericAssigneeId) && numericAssigneeId > 0 ? numericAssigneeId : null;
-      const selectedUser = staff.find((u) => String(u._id) === String(assigneeId));
-      const assigneeName = validAssigneeId != null && selectedUser ? (selectedUser.name || selectedUser.email || null) : null;
-
-      const startTime = `${startTimeHour}:${String(startTimeMin).padStart(2, "0")} ${startTimeAmPm}`;
-      const endTime = `${endTimeHour}:${String(endTimeMin).padStart(2, "0")} ${endTimeAmPm}`;
-      await createTask({
+      const payload = {
         taskName: taskName.trim(),
-        description: description.trim() || undefined,
-        category,
-        assigneeId: validAssigneeId,
-        assigneeName: assigneeName ?? undefined,
-        priority,
-        roomNumber: propertyRoom,
+        departmentId: deptId,
+        description: description.trim() || "",
+        assigneeId: asnId,
+        priority: priority.toUpperCase(),
+        propertyId: propId,
         dueDate: dueDate || undefined,
-        startTime,
-        endTime,
+        startTime: to24h(startTimeHour, startTimeMin, startTimeAmPm),
+        endTime: to24h(endTimeHour, endTimeMin, endTimeAmPm),
+        timeDuration: timeDurationMins,
         status: "pending",
-      });
+        roomNumber: roomNumber || undefined,
+        locationFloor: locationFloor.trim() || undefined,
+        instructions: [],
+        guestRequest: guestRequest.trim() || undefined,
+        attachments: [],
+      };
+      if (frequency) payload.frequency = frequency;
+      await createTask(payload);
       onSuccess?.();
       onClose?.();
     } catch (e) {
@@ -151,21 +175,21 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Category</label>
+              <label className="block text-sm text-gray-600 mb-1">Department</label>
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={departmentId}
+                onChange={(e) => setDepartmentId(e.target.value)}
                 className="w-full border px-4 py-2 rounded-lg"
-                disabled={categoriesLoading}
+                disabled={loading}
               >
-                <option value="">Select category...</option>
-                {categories
+                <option value="">Select department...</option>
+                {departments
                   .filter((d) => (d.name ?? "").trim())
                   .map((d) => {
-                    const name = (d.name ?? "").trim();
+                    const id = d.id ?? d._id ?? "";
                     return (
-                      <option key={d.id} value={name}>
-                        {name}
+                      <option key={id} value={String(id)}>
+                        {String(d.name ?? "").trim()}
                       </option>
                     );
                   })}
@@ -227,21 +251,50 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
           </div>
         </section>
 
-        {/* LOCATION & SCHEDULE - Figma */}
+        {/* LOCATION & SCHEDULE */}
         <section>
           <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3">LOCATION & SCHEDULE</h3>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Zones</label>
+              <label className="block text-sm text-gray-600 mb-1">Property</label>
               <select
-                value={propertyRoom}
-                onChange={(e) => setPropertyRoom(e.target.value)}
+                value={propertyId}
+                onChange={(e) => setPropertyId(e.target.value)}
+                className="w-full border px-4 py-2 rounded-lg"
+                disabled={loading}
+              >
+                <option value="">Select property...</option>
+                {properties.map((p) => {
+                  const id = p.id ?? p._id ?? "";
+                  return (
+                    <option key={id} value={String(id)}>
+                      {p.name ?? p.propertyName ?? id}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Room / Zone</label>
+              <select
+                value={roomNumber}
+                onChange={(e) => setRoomNumber(e.target.value)}
                 className="w-full border px-4 py-2 rounded-lg"
               >
                 {ZONES.map((z) => (
                   <option key={z} value={z}>{z}</option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Location / Floor (optional)</label>
+              <input
+                type="text"
+                placeholder="e.g. 3rd Floor - Deluxe Suite"
+                value={locationFloor}
+                onChange={(e) => setLocationFloor(e.target.value)}
+                className="w-full border px-4 py-2 rounded-lg"
+              />
             </div>
             <div>
               <label className="block text-sm text-gray-600 mb-1">Due Date</label>
@@ -328,20 +381,43 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
             <div>
               <label className="block text-sm text-gray-600 mb-1">Task Duration</label>
               <div className="w-full border border-gray-200 px-4 py-2 rounded-lg bg-gray-50 text-gray-700 font-medium">
-                {taskDuration}
+                {taskDurationLabel} ({timeDurationMins} min)
               </div>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Frequency (optional)</label>
+              <select
+                value={frequency}
+                onChange={(e) => setFrequency(e.target.value)}
+                className="w-full border px-4 py-2 rounded-lg"
+              >
+                {FREQUENCIES.map((f) => (
+                  <option key={f.value || "none"} value={f.value}>{f.label}</option>
+                ))}
+              </select>
             </div>
           </div>
         </section>
 
-        {/* ATTACHMENTS - Figma */}
+        {/* GUEST REQUEST & ATTACHMENTS */}
         <section>
-          <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3">ATTACHMENTS</h3>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center text-gray-500">
-            <div className="text-2xl mb-2">↑</div>
-            <p className="text-sm">Click to upload or drag and drop</p>
-            <p className="text-xs mt-1">PNG, JPG, PDF up to 10MB</p>
-            {/* Backend: file upload would POST to /api/tasks/:id/attachments */}
+          <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3">ADDITIONAL</h3>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Guest Request (optional)</label>
+              <textarea
+                placeholder="e.g. Guest has requested extra pillows..."
+                value={guestRequest}
+                onChange={(e) => setGuestRequest(e.target.value)}
+                rows={2}
+                className="w-full border px-4 py-2 rounded-lg"
+              />
+            </div>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center text-gray-500">
+              <div className="text-2xl mb-2">↑</div>
+              <p className="text-sm">Attachments (coming soon)</p>
+              <p className="text-xs mt-1">PNG, JPG, PDF up to 10MB</p>
+            </div>
           </div>
         </section>
 

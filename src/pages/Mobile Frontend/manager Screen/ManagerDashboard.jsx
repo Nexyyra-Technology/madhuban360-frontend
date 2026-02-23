@@ -62,7 +62,7 @@ export default function ManagerDashboard() {
             <h1 className="manager-greeting">{getGreeting()}, {getUserDisplayName(user)}</h1>
             <p className="manager-location">📍 Madhuban Group</p>
           </div>
-          <button type="button" className="manager-notify" aria-label="Notifications">🔔</button>
+          <button type="button" className="manager-notify" aria-label="Notifications" onClick={() => navigate("/mobile/manager/notifications")}>🔔</button>
         </div>
       </header>
 

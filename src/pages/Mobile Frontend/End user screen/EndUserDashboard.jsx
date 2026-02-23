@@ -166,7 +166,7 @@ export default function EndUserDashboard() {
           <h2 className="end-user-name">{getUserDisplayName(user)}</h2>
           <p className="end-user-role">{displayRole}</p>
         </div>
-        <button type="button" className="end-user-notify" aria-label="Notifications">🔔</button>
+        <button type="button" className="end-user-notify" aria-label="Notifications" onClick={() => navigate("/mobile/notifications")}>🔔</button>
       </header>
 
       <section className="end-user-section">

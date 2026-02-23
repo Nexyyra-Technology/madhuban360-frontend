@@ -4,12 +4,19 @@
  * - Mobile number (10-digit) + Password login
  * - Forgot password link triggers OTP flow via /mobile/otp
  * - Uses mobileAuthService: mobileLogin, requestOtp
- * - On success: navigate to /mobile/dashboard
+ * - On success: redirect by role – Manager/Admin → /mobile/manager/dashboard, Staff → /mobile/dashboard
  * - Route: /mobile/login
  */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { mobileLogin, requestOtp, normalizeMobile } from "./mobileAuthService";
+import { useAuth } from "../../../context/AuthContext";
+
+function isManagerRole(user) {
+  if (!user?.role) return false;
+  const r = String(user.role).toLowerCase();
+  return ["manager", "admin", "supervisor"].includes(r);
+}
 import logoIcon from "../../../assets/logo-icon.png";
 import logoText from "../../../assets/logo-text.png";
 
@@ -19,6 +26,7 @@ export default function LoginScreen() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   // ----- Handlers -----
   async function handleForgotPassword() {
@@ -50,8 +58,10 @@ export default function LoginScreen() {
     setError("");
     setLoading(true);
     try {
-      await mobileLogin(mobile, password);
-      navigate("/mobile/dashboard", { replace: true });
+      const { user } = await mobileLogin(mobile, password);
+      setUser(user);
+      const target = isManagerRole(user) ? "/mobile/manager/dashboard" : "/mobile/dashboard";
+      navigate(target, { replace: true });
     } catch (err) {
       setError(err?.message || "Login failed. Please try again.");
     } finally {

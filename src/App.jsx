@@ -4,11 +4,12 @@
  * - Protected routes (desktop): require token, else redirect to /login
  * - Mobile routes: /mobile/* (Welcome, Splash, Login, OTP, ChangePassword, Dashboard, Tasks, Profile, Reports)
  * - Mobile protected routes: require token, else redirect to /mobile/login
+ * - Role-based redirect: Manager/Admin → manager screens, Staff → end-user screens
  * - mobile-login-wrapper: max-width 430px container for mobile-first layout
  */
 import { Component } from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import Layout from "./layout/Layout";
 import Login from "./pages/Login";
 import WelcomeScreen from "./pages/Mobile Frontend/Login page/WelcomeScreen";
@@ -69,9 +70,35 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function isManagerRole(user) {
+  if (!user?.role) return false;
+  const r = String(user.role).toLowerCase();
+  return ["manager", "admin", "supervisor"].includes(r);
+}
+
 function MobileProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
   if (!token) return <Navigate to="/mobile/login" replace />;
+  return children;
+}
+
+function MobileStaffRoute({ children }) {
+  const { user } = useAuth();
+  let u = user;
+  if (!u) {
+    try { u = JSON.parse(localStorage.getItem("user") || "null"); } catch {}
+  }
+  if (u && isManagerRole(u)) return <Navigate to="/mobile/manager/dashboard" replace />;
+  return children;
+}
+
+function MobileManagerRoute({ children }) {
+  const { user } = useAuth();
+  let u = user;
+  if (!u) {
+    try { u = JSON.parse(localStorage.getItem("user") || "null"); } catch {}
+  }
+  if (u && !isManagerRole(u)) return <Navigate to="/mobile/dashboard" replace />;
   return children;
 }
 
@@ -111,19 +138,19 @@ export default function App() {
             <Route path="login" element={<LoginScreen />} />
             <Route path="otp" element={<OtpVerificationScreen />} />
             <Route path="change-password" element={<ChangePasswordScreen />} />
-            <Route path="dashboard" element={<MobileProtectedRoute><EndUserDashboard /></MobileProtectedRoute>} />
-            <Route path="tasks" element={<MobileProtectedRoute><EndUserTasksList /></MobileProtectedRoute>} />
-            <Route path="task/:id" element={<MobileProtectedRoute><EndUserTaskDetails /></MobileProtectedRoute>} />
-            <Route path="task/:id/complete" element={<MobileProtectedRoute><EndUserTaskCompletion /></MobileProtectedRoute>} />
-            <Route path="task/:id/success" element={<MobileProtectedRoute><EndUserTaskCompletionSuccess /></MobileProtectedRoute>} />
-            <Route path="profile" element={<MobileProtectedRoute><EndUserProfile /></MobileProtectedRoute>} />
-            <Route path="profile/change-password" element={<MobileProtectedRoute><EndUserProfileChangePassword /></MobileProtectedRoute>} />
-            <Route path="reports" element={<MobileProtectedRoute><EndUserReports /></MobileProtectedRoute>} />
-            <Route path="manager/dashboard" element={<MobileProtectedRoute><ManagerDashboard /></MobileProtectedRoute>} />
-            <Route path="manager/tasks" element={<MobileProtectedRoute><ManagerTaskOverview /></MobileProtectedRoute>} />
-            <Route path="manager/supervisors" element={<MobileProtectedRoute><ManagerSupervisors /></MobileProtectedRoute>} />
-            <Route path="manager/reports" element={<MobileProtectedRoute><ManagerReports /></MobileProtectedRoute>} />
-            <Route path="manager/profile" element={<MobileProtectedRoute><ManagerProfile /></MobileProtectedRoute>} />
+            <Route path="dashboard" element={<MobileProtectedRoute><MobileStaffRoute><EndUserDashboard /></MobileStaffRoute></MobileProtectedRoute>} />
+            <Route path="tasks" element={<MobileProtectedRoute><MobileStaffRoute><EndUserTasksList /></MobileStaffRoute></MobileProtectedRoute>} />
+            <Route path="task/:id" element={<MobileProtectedRoute><MobileStaffRoute><EndUserTaskDetails /></MobileStaffRoute></MobileProtectedRoute>} />
+            <Route path="task/:id/complete" element={<MobileProtectedRoute><MobileStaffRoute><EndUserTaskCompletion /></MobileStaffRoute></MobileProtectedRoute>} />
+            <Route path="task/:id/success" element={<MobileProtectedRoute><MobileStaffRoute><EndUserTaskCompletionSuccess /></MobileStaffRoute></MobileProtectedRoute>} />
+            <Route path="profile" element={<MobileProtectedRoute><MobileStaffRoute><EndUserProfile /></MobileStaffRoute></MobileProtectedRoute>} />
+            <Route path="profile/change-password" element={<MobileProtectedRoute><MobileStaffRoute><EndUserProfileChangePassword /></MobileStaffRoute></MobileProtectedRoute>} />
+            <Route path="reports" element={<MobileProtectedRoute><MobileStaffRoute><EndUserReports /></MobileStaffRoute></MobileProtectedRoute>} />
+            <Route path="manager/dashboard" element={<MobileProtectedRoute><MobileManagerRoute><ManagerDashboard /></MobileManagerRoute></MobileProtectedRoute>} />
+            <Route path="manager/tasks" element={<MobileProtectedRoute><MobileManagerRoute><ManagerTaskOverview /></MobileManagerRoute></MobileProtectedRoute>} />
+            <Route path="manager/supervisors" element={<MobileProtectedRoute><MobileManagerRoute><ManagerSupervisors /></MobileManagerRoute></MobileProtectedRoute>} />
+            <Route path="manager/reports" element={<MobileProtectedRoute><MobileManagerRoute><ManagerReports /></MobileManagerRoute></MobileProtectedRoute>} />
+            <Route path="manager/profile" element={<MobileProtectedRoute><MobileManagerRoute><ManagerProfile /></MobileManagerRoute></MobileProtectedRoute>} />
           </Route>
           <Route
             path="/"

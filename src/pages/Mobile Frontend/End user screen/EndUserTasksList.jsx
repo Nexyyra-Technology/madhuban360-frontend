@@ -55,7 +55,7 @@ export default function EndUserTasksList() {
                 <span>{t.subtitle || t.category}</span>
                 <p>{t.description}</p>
                 <span className="task-due">🕐 End time: {formatTaskEndTime(t.dueTime || t.dueDate) ?? "—"}</span>
-                <span className="task-due task-duration">⏱ Task duration: {formatTaskDuration(t.durationMinutes) ?? "10 min"}</span>
+                <span className="task-due task-duration">⏱ Task duration: {formatTaskDuration(t.durationMinutes) ?? "—"}</span>
               </div>
               <span className={`task-tag ${statusStyle(t.status)}`}>
                 {t.status?.replace(/_/g, " ") || "Pending"}

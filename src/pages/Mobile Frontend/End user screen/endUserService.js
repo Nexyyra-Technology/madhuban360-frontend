@@ -15,6 +15,8 @@ import { API_BASE_URL } from "../../../config/api";
 import { getAuthHeaders, readJsonOrThrow } from "../../../lib/apiClient";
 
 const API = `${API_BASE_URL}/api`;
+/** GET /api/staff/tasks - in dev (localhost:5173) this is http://localhost:5173/api/staff/tasks (proxied to backend) */
+const STAFF_TASKS_URL = `${API}/staff/tasks`;
 
 /* ---------- USER / PROFILE (Database: users collection) ---------- */
 
@@ -52,21 +54,50 @@ export async function updateUserProfile(payload) {
 
 /* ---------- TASKS (Database: tasks collection) ---------- */
 
-/** Backend: GET /api/staff/tasks - fetch tasks assigned to current user */
+/** Backend: GET /api/staff/tasks - fetch tasks assigned to current user. Sends user login token in header: Authorization: Bearer <token>. */
 export async function getMyTasks(filters = {}) {
   const params = new URLSearchParams();
   if (filters.status) params.set("status", filters.status);
   const qs = params.toString();
-  // Use /api/staff/tasks to get only tasks assigned to the logged-in user
-  const url = qs ? `${API}/staff/tasks?${qs}` : `${API}/staff/tasks`;
-  const res = await fetch(url, { headers: getAuthHeaders() });
+  const url = qs ? `${STAFF_TASKS_URL}?${qs}` : STAFF_TASKS_URL;
+  const res = await fetch(url, { headers: getAuthHeaders() }); // token from localStorage (set on login)
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
     if (res.status === 404) return getFallbackTasks();
     throw new Error(json?.message || "Failed to fetch tasks");
   }
-  const tasks = json?.data?.tasks ?? json?.tasks ?? (Array.isArray(json) ? json : []);
-  return tasks.map(normalizeTask);
+  // API shape: { success, data: { summary: { done, left }, tasks: [...] } } or { data: [...] }
+  const data = json?.data;
+  const list = Array.isArray(data) ? data : (data?.tasks ?? json?.tasks ?? []);
+  return (list || []).map(normalizeTask);
+}
+
+/**
+ * GET /api/staff/tasks - fetch assigned tasks and summary.
+ * Returns { summary: { done, left }, tasks } for dashboard (data.summary + data.tasks).
+ */
+export async function getMyTasksWithSummary(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.status) params.set("status", filters.status);
+  const qs = params.toString();
+  const url = qs ? `${STAFF_TASKS_URL}?${qs}` : STAFF_TASKS_URL;
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 404) {
+      const fallback = getFallbackTasks();
+      return { summary: { done: 0, left: fallback.length }, tasks: fallback };
+    }
+    throw new Error(json?.message || "Failed to fetch tasks");
+  }
+  const data = json?.data;
+  const list = Array.isArray(data) ? data : (data?.tasks ?? json?.tasks ?? []);
+  const tasks = (list || []).map(normalizeTask);
+  const summary = data?.summary ?? {
+    done: tasks.filter((t) => (t.status || "").toUpperCase() === "COMPLETED").length,
+    left: tasks.filter((t) => !["COMPLETED"].includes((t.status || "").toUpperCase())).length,
+  };
+  return { summary: { done: Number(summary.done) || 0, left: Number(summary.left) ?? tasks.length }, tasks };
 }
 
 /** Backend: GET /api/staff/tasks - fetch assigned tasks (alias for dashboard) */
@@ -76,7 +107,7 @@ export async function getMyAssignedTasks() {
 
 /** Backend: GET /api/staff/tasks/:id - fetch single task by id from database */
 export async function getTaskById(id) {
-  const res = await fetch(`${API}/staff/tasks/${id}`, { headers: getAuthHeaders() });
+  const res = await fetch(`${STAFF_TASKS_URL}/${id}`, { headers: getAuthHeaders() });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
     if (res.status === 404) return getFallbackTask(id);
@@ -88,7 +119,7 @@ export async function getTaskById(id) {
 
 /** Backend: PATCH /api/staff/tasks/:id/status - update task status in database */
 export async function updateTaskStatus(taskId, status) {
-  const res = await fetch(`${API}/staff/tasks/${taskId}/status`, {
+  const res = await fetch(`${STAFF_TASKS_URL}/${taskId}/status`, {
     method: "PATCH",
     headers: getAuthHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ status }),
@@ -106,7 +137,7 @@ export async function submitTaskCompletion(taskId, { beforePhoto, afterPhoto, no
   const headers = getAuthHeaders();
   delete headers["Content-Type"];
 
-  const res = await fetch(`${API}/staff/tasks/${taskId}/complete`, {
+  const res = await fetch(`${STAFF_TASKS_URL}/${taskId}/complete`, {
     method: "POST",
     headers,
     body: formData,

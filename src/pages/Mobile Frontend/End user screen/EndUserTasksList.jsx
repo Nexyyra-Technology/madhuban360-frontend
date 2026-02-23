@@ -1,10 +1,11 @@
 /**
- * EndUserTasksList – List of assigned tasks for end user
+ * EndUserTasksList – List of assigned tasks for end user (My Tasks page)
  * -----------------------------------------------------------------------
- * - Fetches tasks via getMyTasks from backend
+ * - On load: GET /api/staff/tasks (http://localhost:5173/api/staff/tasks in dev)
+ *   via getMyAssignedTasks() with Authorization: Bearer <staff token>
  * - Task cards show title, subtitle, description, due time, status
  * - Click navigates to /mobile/task/:id
- * - Route: /mobile/tasks (protected)
+ * - Route: /mobile/tasks (protected; requires token or redirect to /mobile/login)
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";

@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { getUserById, updateUser } from "./userService";
+import { getUserById, updateUser, getUsers, getRoles } from "./userService";
 import { useEffect, useState } from "react";
 
 export default function EditUser() {
@@ -19,6 +19,9 @@ export default function EditUser() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [totalUsers, setTotalUsers] = useState(null);
+  const [roles, setRoles] = useState([]);
+  const [rolesLoading, setRolesLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
@@ -27,16 +30,18 @@ export default function EditUser() {
         const data = await getUserById(id);
         setUser(data);
         if (data) {
+          const roleRaw = data.role ?? "staff";
+          const role = roleRaw.toString().toLowerCase();
           setForm({
-          name: data.name ?? "",
-          email: data.email ?? "",
-          phone: data.phone ?? "",
-          username: data.username ?? data.email ?? "",
-          jobTitle: data.jobTitle ?? "",
-          role: data.role ?? "Staff",
-          status: data.status ?? "Active",
-          preferredLanguage: data.preferredLanguage ?? "English (US)",
-          facilities: data.facilities ?? [],
+            name: data.name ?? "",
+            email: data.email ?? "",
+            phone: data.phone ?? data.phoneNumber ?? "",
+            username: data.username ?? data.email ?? "",
+            jobTitle: roleRaw,
+            role,
+            status: data.status ?? "Active",
+            preferredLanguage: data.preferredLanguage ?? "English (US)",
+            facilities: data.facilities ?? [],
           });
         }
       } catch (e) {
@@ -45,6 +50,21 @@ export default function EditUser() {
     }
     load();
   }, [id]);
+
+  useEffect(() => {
+    getUsers()
+      .then((list) => setTotalUsers(Array.isArray(list) ? list.length : 0))
+      .catch(() => setTotalUsers(0));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    getRoles()
+      .then((list) => { if (!cancelled) setRoles(list || []); })
+      .catch(() => { if (!cancelled) setRoles([]); })
+      .finally(() => { if (!cancelled) setRolesLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   if (!user && !error) return <div className="p-8">Loading...</div>;
   if (!user) return (
@@ -99,15 +119,12 @@ export default function EditUser() {
               onChange={setField("name")}
               className="text-2xl font-bold border-b-2 border-blue-500 outline-none"
             />
-            <input
-              value={form.jobTitle}
-              onChange={setField("jobTitle")}
-              placeholder="Job Title"
-              className="text-sm text-gray-600 border-b border-gray-300 outline-none mt-1"
-            />
             <div className="text-xs text-gray-500 mt-2">
               <p>{form.email}</p>
               <p>Last login: 2 hours ago</p>
+              {totalUsers != null && (
+                <p className="mt-1 text-gray-600 font-medium">Total users created: {totalUsers}</p>
+              )}
             </div>
           </div>
         </div>
@@ -173,11 +190,19 @@ export default function EditUser() {
                 value={form.role}
                 onChange={setField("role")}
                 className="w-full border px-3 py-2 rounded-lg mt-1"
+                disabled={rolesLoading}
               >
-                <option>Admin</option>
-                <option>Manager</option>
-                <option>Supervisor</option>
-                <option>Staff</option>
+                <option value="">Select a role</option>
+                {roles.map((r) => (
+                  <option key={r.id} value={r.name}>
+                    {r.name.charAt(0).toUpperCase() + r.name.slice(1)}
+                  </option>
+                ))}
+                {form.role && !roles.some((r) => r.name === form.role) && (
+                  <option value={form.role}>
+                    {form.role.charAt(0).toUpperCase() + form.role.slice(1)}
+                  </option>
+                )}
               </select>
             </div>
             <div>

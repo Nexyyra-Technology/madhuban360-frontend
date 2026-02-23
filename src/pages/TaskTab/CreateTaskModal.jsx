@@ -6,10 +6,8 @@
  */
 import { useState, useEffect } from "react";
 import { createTask } from "./taskService";
-import { getUsers } from "../UserTab/userService";
+import { getUsersForAssignee, getDepartments } from "../UserTab/userService";
 import ModalWrapper from "../UserTab/ModalWrapper";
-
-const CATEGORIES = ["Cleaning", "Housekeeping"];
 const ZONES = [
   "Outside main door",
   "Reception Area HR Desk Employee Desk",
@@ -27,7 +25,7 @@ const ZONES = [
 
 export default function CreateTaskModal({ onClose, onSuccess }) {
   const [taskName, setTaskName] = useState("");
-  const [category, setCategory] = useState("Cleaning");
+  const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [priority, setPriority] = useState("HIGH");
@@ -40,12 +38,33 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
   const [endTimeMin, setEndTimeMin] = useState("00");
   const [endTimeAmPm, setEndTimeAmPm] = useState("PM");
   const [staff, setStaff] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Backend: fetch users for assignee dropdown
+  // Backend: fetch users for assignee dropdown (GET /api/users?page=1&limit=10)
   useEffect(() => {
-    getUsers().then((users) => setStaff(Array.isArray(users) ? users : []));
+    getUsersForAssignee(1, 10).then((users) => setStaff(Array.isArray(users) ? users : []));
+  }, []);
+
+  // Backend: fetch departments for Category dropdown (GET /api/departments)
+  useEffect(() => {
+    let cancelled = false;
+    getDepartments()
+      .then((list) => {
+        if (!cancelled && Array.isArray(list)) {
+          setCategories(list);
+          setCategory((prev) => {
+            if (prev) return prev;
+            const first = list.find((d) => (d.name ?? "").trim());
+            return first ? first.name.trim() : "";
+          });
+        }
+      })
+      .catch(() => { if (!cancelled) setCategories([]); })
+      .finally(() => { if (!cancelled) setCategoriesLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   // Task duration (auto-calculated from start and end time)
@@ -78,18 +97,21 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
     try {
       setSaving(true);
       // Backend: POST /api/tasks - payload saved to backend/database
-      // Convert assigneeId to number (backend expects numeric id)
-      const numericAssigneeId = assigneeId ? parseInt(assigneeId, 10) : undefined;
-      const assigneeName = staff.find((u) => u._id === assigneeId)?.name;
-      
+      // Send assigneeId as number so backend persists it (never send undefined - it gets stripped and backend gets null)
+      const rawId = assigneeId != null && assigneeId !== "" ? String(assigneeId).trim() : "";
+      const numericAssigneeId = rawId === "" ? null : parseInt(rawId, 10);
+      const validAssigneeId = Number.isInteger(numericAssigneeId) && numericAssigneeId > 0 ? numericAssigneeId : null;
+      const selectedUser = staff.find((u) => String(u._id) === String(assigneeId));
+      const assigneeName = validAssigneeId != null && selectedUser ? (selectedUser.name || selectedUser.email || null) : null;
+
       const startTime = `${startTimeHour}:${String(startTimeMin).padStart(2, "0")} ${startTimeAmPm}`;
       const endTime = `${endTimeHour}:${String(endTimeMin).padStart(2, "0")} ${endTimeAmPm}`;
       await createTask({
         taskName: taskName.trim(),
         description: description.trim() || undefined,
         category,
-        assigneeId: numericAssigneeId,
-        assigneeName: assigneeName || undefined,
+        assigneeId: validAssigneeId,
+        assigneeName: assigneeName ?? undefined,
         priority,
         roomNumber: propertyRoom,
         dueDate: dueDate || undefined,
@@ -134,10 +156,19 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full border px-4 py-2 rounded-lg"
+                disabled={categoriesLoading}
               >
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
+                <option value="">Select category...</option>
+                {categories
+                  .filter((d) => (d.name ?? "").trim())
+                  .map((d) => {
+                    const name = (d.name ?? "").trim();
+                    return (
+                      <option key={d.id} value={name}>
+                        {name}
+                      </option>
+                    );
+                  })}
               </select>
             </div>
             <div>
@@ -166,7 +197,7 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
               >
                 <option value="">Select staff member...</option>
                 {staff.map((u) => (
-                  <option key={u._id} value={u._id}>{u.name}</option>
+                  <option key={u._id} value={u._id}>{u.name || u.email}</option>
                 ))}
               </select>
             </div>

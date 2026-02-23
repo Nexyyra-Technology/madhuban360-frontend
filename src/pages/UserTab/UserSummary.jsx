@@ -51,8 +51,8 @@ export default function UserSummary() {
               <h1 className="text-2xl font-bold">{user.name}</h1>
               <p className="text-gray-600">{user.jobTitle}</p>
               <div className="text-xs text-gray-500 mt-2 space-y-1">
-                <p>📧 {user.email}</p>
-                <p>📞 {user.phone || "N/A"}</p>
+                <p>📧 {user.email || "—"}</p>
+                <p>📞 {user.phone ? String(user.phone).trim() || "—" : "—"}</p>
                 <p>📅 Joined Jan 16, 2023</p>
               </div>
               <span className="inline-block mt-3 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
@@ -135,15 +135,23 @@ export default function UserSummary() {
                 <div className="space-y-4">
                   <div>
                     <p className="text-xs font-medium text-gray-500 uppercase">Full Name</p>
-                    <p className="text-gray-900">{user.name}</p>
+                    <p className="text-gray-900">{user.name || "—"}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase">Employed By</p>
-                    <p className="text-gray-900">FMS-8829-JD</p>
+                    <p className="text-xs font-medium text-gray-500 uppercase">Email</p>
+                    <p className="text-gray-900">{user.email || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase">Phone Number</p>
+                    <p className="text-gray-900">{user.phone ? String(user.phone).trim() : "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase">Job Title</p>
+                    <p className="text-gray-900">{user.jobTitle || "—"}</p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-gray-500 uppercase">Department</p>
-                    <p className="text-gray-900">Maintenance</p>
+                    <p className="text-gray-900">{user.department || "—"}</p>
                   </div>
                 </div>
               </section>

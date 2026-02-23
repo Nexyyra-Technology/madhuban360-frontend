@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { createUser } from "./userService";
+import { useState, useEffect } from "react";
+import { createUser, getRoles, getDepartments, getManagers, getSupervisors } from "./userService";
 import ModalWrapper from "./ModalWrapper";
 
 function formatPhoneForPayload(val) {
@@ -16,8 +16,53 @@ export default function AddUserModal({ onClose, onSuccess }) {
   const [role, setRole] = useState("");
   const [status, setStatus] = useState("Active");
   const [department, setDepartment] = useState("");
+  const [manager, setManager] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [roles, setRoles] = useState([]);
+  const [rolesLoading, setRolesLoading] = useState(true);
+  const [departments, setDepartments] = useState([]);
+  const [departmentsLoading, setDepartmentsLoading] = useState(true);
+  const [managers, setManagers] = useState([]);
+  const [managersLoading, setManagersLoading] = useState(true);
+  const [supervisors, setSupervisors] = useState([]);
+  const [supervisorsLoading, setSupervisorsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getRoles()
+      .then((list) => { if (!cancelled) setRoles(list || []); })
+      .catch(() => { if (!cancelled) setRoles([]); })
+      .finally(() => { if (!cancelled) setRolesLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    getDepartments()
+      .then((list) => { if (!cancelled) setDepartments(list || []); })
+      .catch(() => { if (!cancelled) setDepartments([]); })
+      .finally(() => { if (!cancelled) setDepartmentsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    getManagers()
+      .then((list) => { if (!cancelled) setManagers(list || []); })
+      .catch(() => { if (!cancelled) setManagers([]); })
+      .finally(() => { if (!cancelled) setManagersLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    getSupervisors()
+      .then((list) => { if (!cancelled) setSupervisors(list || []); })
+      .catch(() => { if (!cancelled) setSupervisors([]); })
+      .finally(() => { if (!cancelled) setSupervisorsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   function handlePhoneChange(e) {
     const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
@@ -34,6 +79,7 @@ export default function AddUserModal({ onClose, onSuccess }) {
     if (!username.trim()) errors.push("Username is required");
     if (!password.trim()) errors.push("Password is required");
     if (!role) errors.push("System role is required");
+    if (!department.trim()) errors.push("Department is required");
 
     if (errors.length > 0) {
       setError(errors.join(". "));
@@ -43,6 +89,7 @@ export default function AddUserModal({ onClose, onSuccess }) {
     try {
       setSaving(true);
       const dept = department.trim();
+      const roleLower = (role || "").toLowerCase();
       const payload = {
         name: name.trim(),
         email: email.trim(),
@@ -54,13 +101,16 @@ export default function AddUserModal({ onClose, onSuccess }) {
         department: dept,
         primaryDepartment: dept,
         jobTitle: dept || undefined,
+        ...(roleLower === "staff" && manager && { supervisorId: Number(manager) || manager }),
+        ...(roleLower === "supervisor" && manager && { managerId: Number(manager) || manager }),
       };
 
       await createUser(payload);
       onSuccess?.();
       onClose?.();
     } catch (e) {
-      setError(e?.message || "Failed to create user");
+      const msg = e?.message || "Failed to create user";
+      setError(msg.replace(/Primary department is required/i, "Department is required"));
     } finally {
       setSaving(false);
     }
@@ -150,13 +200,20 @@ export default function AddUserModal({ onClose, onSuccess }) {
               <select
                 className="w-full border px-3 py-2 rounded-lg"
                 value={role}
-                onChange={(e) => setRole(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setRole(v);
+                  const r = (v || "").toLowerCase();
+                  if (r !== "staff" && r !== "supervisor") setManager("");
+                }}
+                disabled={rolesLoading}
               >
                 <option value="">Select a role</option>
-                <option value="Admin">Admin</option>
-                <option value="Manager">Manager</option>
-                <option value="Supervisor">Supervisor</option>
-                <option value="Staff">Staff</option>
+                {roles.map((r) => (
+                  <option key={r.id} value={r.name}>
+                    {r.name.charAt(0).toUpperCase() + r.name.slice(1)}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -173,18 +230,69 @@ export default function AddUserModal({ onClose, onSuccess }) {
             </div>
 
             <div>
-              <label className="text-xs text-gray-600">Primary Department</label>
+              <label className="text-xs text-gray-600">Department</label>
               <select
                 className="w-full border px-3 py-2 rounded-lg"
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
+                disabled={departmentsLoading}
               >
                 <option value="">Select department</option>
-                <option value="Maintenance">Maintenance</option>
-                <option value="Operations">Operations</option>
-                <option value="Electrical">Electrical</option>
+                {departments
+                  .filter((d) => (d.name ?? "").trim())
+                  .map((d) => {
+                    const name = (d.name ?? "").trim();
+                    return (
+                      <option key={d.id} value={name}>
+                        {name}
+                      </option>
+                    );
+                  })}
               </select>
             </div>
+
+            {(() => {
+              const r = (role || "").toLowerCase();
+              if (r === "staff")
+                return (
+                  <div>
+                    <label className="text-xs text-gray-600">Supervisor</label>
+                    <select
+                      className="w-full border px-3 py-2 rounded-lg"
+                      value={manager}
+                      onChange={(e) => setManager(e.target.value)}
+                      disabled={supervisorsLoading}
+                    >
+                      <option value="">Select supervisor</option>
+                      {supervisors.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name ?? `Supervisor ${s.id}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              if (r === "supervisor")
+                return (
+                  <div>
+                    <label className="text-xs text-gray-600">Manager</label>
+                    <select
+                      className="w-full border px-3 py-2 rounded-lg"
+                      value={manager}
+                      onChange={(e) => setManager(e.target.value)}
+                      disabled={managersLoading}
+                    >
+                      <option value="">Select manager</option>
+                      {managers.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              return null;
+            })()}
           </div>
         </section>
       </div>

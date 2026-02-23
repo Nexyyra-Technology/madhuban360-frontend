@@ -24,6 +24,11 @@ import EndUserTaskCompletionSuccess from "./pages/Mobile Frontend/End user scree
 import EndUserProfile from "./pages/Mobile Frontend/End user screen/EndUserProfile";
 import EndUserProfileChangePassword from "./pages/Mobile Frontend/End user screen/EndUserProfileChangePassword";
 import EndUserReports from "./pages/Mobile Frontend/End user screen/EndUserReports";
+import ManagerDashboard from "./pages/Mobile Frontend/manager screen/ManagerDashboard";
+import ManagerTaskOverview from "./pages/Mobile Frontend/manager screen/ManagerTaskOverview";
+import ManagerSupervisors from "./pages/Mobile Frontend/manager screen/ManagerSupervisors";
+import ManagerReports from "./pages/Mobile Frontend/manager screen/ManagerReports";
+import ManagerProfile from "./pages/Mobile Frontend/manager screen/ManagerProfile";
 import Dashboard from "./pages/DashboardTab/Dashboard";
 import UserManagement from "./pages/UserTab/UserManagement";
 import UserSummary from "./pages/UserTab/UserSummary";
@@ -114,6 +119,11 @@ export default function App() {
             <Route path="profile" element={<MobileProtectedRoute><EndUserProfile /></MobileProtectedRoute>} />
             <Route path="profile/change-password" element={<MobileProtectedRoute><EndUserProfileChangePassword /></MobileProtectedRoute>} />
             <Route path="reports" element={<MobileProtectedRoute><EndUserReports /></MobileProtectedRoute>} />
+            <Route path="manager/dashboard" element={<MobileProtectedRoute><ManagerDashboard /></MobileProtectedRoute>} />
+            <Route path="manager/tasks" element={<MobileProtectedRoute><ManagerTaskOverview /></MobileProtectedRoute>} />
+            <Route path="manager/supervisors" element={<MobileProtectedRoute><ManagerSupervisors /></MobileProtectedRoute>} />
+            <Route path="manager/reports" element={<MobileProtectedRoute><ManagerReports /></MobileProtectedRoute>} />
+            <Route path="manager/profile" element={<MobileProtectedRoute><ManagerProfile /></MobileProtectedRoute>} />
           </Route>
           <Route
             path="/"

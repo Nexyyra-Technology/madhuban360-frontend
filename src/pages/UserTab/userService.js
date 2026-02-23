@@ -8,6 +8,8 @@ import { API_BASE_URL } from "../../config/api";
 import { readJsonOrThrow, getAuthHeaders } from "../../lib/apiClient";
 
 const API_BASE = `${API_BASE_URL}/api/users`;
+const API_ROLES = `${API_BASE_URL}/api/roles`;
+const API_DEPARTMENTS = `${API_BASE_URL}/api/departments`;
 
 function normalizeUser(u) {
   return {
@@ -16,6 +18,9 @@ function normalizeUser(u) {
     role: (u.role ?? "").charAt(0).toUpperCase() + (u.role ?? "").slice(1).toLowerCase(),
     status: (u.status ?? "").charAt(0).toUpperCase() + (u.status ?? "").slice(1).toLowerCase(),
     lastLogin: u.lastLoginAt ? formatLastLogin(u.lastLoginAt) : (u.lastLogin ?? "-"),
+    phone: u.phone ?? u.phoneNumber ?? "",
+    jobTitle: u.jobTitle ?? u.job_title ?? "",
+    department: u.department ?? u.primaryDepartment ?? u.primary_department ?? "",
   };
 }
 
@@ -47,6 +52,22 @@ export async function getUsers() {
     console.error("getUsers error:", err);
 
     return dummyUsers;
+  }
+}
+
+/** GET {{baseUrl}}/api/users?page=1&limit=10 - fetch users for assignee dropdown (Create/Edit Task) */
+export async function getUsersForAssignee(page = 1, limit = 10) {
+  try {
+    const res = await fetch(`${API_BASE}?page=${page}&limit=${limit}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to fetch users");
+    const json = await res.json();
+    const users = json?.data?.users ?? json?.users ?? (Array.isArray(json) ? json : []);
+    return users.map(normalizeUser);
+  } catch (err) {
+    console.error("getUsersForAssignee error:", err);
+    return [];
   }
 }
 
@@ -106,6 +127,61 @@ export async function resetPassword(id, newPassword) {
   });
 
   return await readJsonOrThrow(res);
+}
+
+/** GET /api/roles - Fetch all roles for dropdowns */
+export async function getRoles() {
+  const res = await fetch(API_ROLES, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error("Failed to fetch roles");
+  const json = await res.json();
+  const list = json?.data ?? (Array.isArray(json) ? json : []);
+  return list;
+}
+
+let departmentsCache = null;
+let departmentsPromise = null;
+
+/** GET /api/departments - Fetch all departments for dropdowns (cached, one request) */
+export async function getDepartments() {
+  if (departmentsCache) return departmentsCache;
+  if (departmentsPromise) return departmentsPromise;
+  departmentsPromise = (async () => {
+    const res = await fetch(API_DEPARTMENTS, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error("Failed to fetch departments");
+    const json = await res.json();
+    const list = json?.data ?? (Array.isArray(json) ? json : []);
+    departmentsCache = list;
+    return list;
+  })();
+  return departmentsPromise;
+}
+
+/** GET /api/departments/:id - Fetch a single department by id (e.g. for Job Title) */
+export async function getDepartmentById(departmentId) {
+  const id = departmentId ?? 1;
+  const res = await fetch(`${API_DEPARTMENTS}/${id}`, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error("Failed to fetch department");
+  const json = await res.json();
+  const dept = json?.data ?? json;
+  return dept;
+}
+
+/** GET /api/users/supervisors - Fetch supervisors list for Staff role dropdown */
+export async function getSupervisors() {
+  const res = await fetch(`${API_BASE}/supervisors`, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error("Failed to fetch supervisors");
+  const json = await res.json();
+  const list = json?.data ?? (Array.isArray(json) ? json : []);
+  return list;
+}
+
+/** GET /api/users/managers - Fetch managers list for Supervisor role dropdown */
+export async function getManagers() {
+  const res = await fetch(`${API_BASE}/managers`, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error("Failed to fetch managers");
+  const json = await res.json();
+  const list = json?.data ?? (Array.isArray(json) ? json : []);
+  return list;
 }
 
 export async function createUser(data) {

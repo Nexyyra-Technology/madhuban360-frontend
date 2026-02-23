@@ -15,6 +15,7 @@ import { useAuth } from "../../../context/AuthContext";
 import {
   getCurrentUser,
   getMyAssignedTasks,
+  getMyTasksWithSummary,
   getTodayAttendance,
   checkIn,
   checkOut,
@@ -46,6 +47,7 @@ export default function EndUserDashboard() {
   const { user: authUser } = useAuth();
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
+  const [summary, setSummary] = useState({ done: 0, left: 0 });
   const [attendance, setAttendance] = useState({ checkedIn: false });
   const [loading, setLoading] = useState(true);
   const [checkingIn, setCheckingIn] = useState(false);
@@ -61,7 +63,8 @@ export default function EndUserDashboard() {
 
   async function loadTasks() {
     try {
-      const t = await getMyAssignedTasks();
+      const { summary: s, tasks: t } = await getMyTasksWithSummary();
+      setSummary(s || { done: 0, left: 0 });
       setTasks(Array.isArray(t) ? t : []);
     } catch (e) {
       console.error("Failed to load tasks:", e);
@@ -71,17 +74,19 @@ export default function EndUserDashboard() {
   useEffect(() => {
     async function load() {
       try {
-        const [u, t, a] = await Promise.all([
+        const [u, taskData, a] = await Promise.all([
           getCurrentUser(),
-          getMyAssignedTasks(),
+          getMyTasksWithSummary(),
           getTodayAttendance(),
         ]);
         setUser({ ...authUser, ...u });
-        setTasks(Array.isArray(t) ? t : []);
+        setSummary(taskData?.summary || { done: 0, left: 0 });
+        setTasks(Array.isArray(taskData?.tasks) ? taskData.tasks : []);
         setAttendance(a || { checkedIn: false });
       } catch (e) {
         setUser(authUser || { name: "User", location: "Madhuban Group" });
         setTasks([]);
+        setSummary({ done: 0, left: 0 });
       } finally {
         setLoading(false);
       }
@@ -97,7 +102,8 @@ export default function EndUserDashboard() {
       setCheckInTime(formatTimeHHMMSS(new Date()));
       setCheckOutTime(null);
       setAttendance({ checkedIn: true });
-      const updatedTasks = await getMyAssignedTasks();
+      const { summary: s, tasks: updatedTasks } = await getMyTasksWithSummary();
+      setSummary(s || { done: 0, left: 0 });
       setTasks(Array.isArray(updatedTasks) ? updatedTasks : []);
     } catch (e) {
       setAttendance({ checkedIn: true });
@@ -120,8 +126,8 @@ export default function EndUserDashboard() {
     }
   }
 
-  const done = tasks.filter((t) => t.status?.toUpperCase() === "COMPLETED").length;
-  const remaining = tasks.filter((t) => {
+  const done = summary.done ?? tasks.filter((t) => t.status?.toUpperCase() === "COMPLETED").length;
+  const remaining = summary.left ?? tasks.filter((t) => {
     const status = t.status?.toUpperCase();
     return ["TO_DO", "IN_PROGRESS", "PENDING", "OVERDUE"].includes(status);
   }).length;
@@ -132,6 +138,18 @@ export default function EndUserDashboard() {
     if (status === "OVERDUE") return "overdue";
     if (status === "IN_PROGRESS") return "in-progress";
     return "pending";
+  };
+
+  const formatCardDate = (due) => {
+    if (due == null || due === "") return "—";
+    const d = new Date(due);
+    return Number.isNaN(d.getTime()) ? "—" : d.toISOString().slice(0, 10);
+  };
+
+  const getAssigneeInitial = (t) => {
+    const name = t.assigneeName || t.assignee?.name || "";
+    if (name) return String(name).trim().split(/\s+/).map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+    return "U";
   };
 
   const displayRole = user?.role
@@ -207,11 +225,11 @@ export default function EndUserDashboard() {
         </div>
         <div className="end-user-task-list">
           {loading ? (
-            <p>Loading tasks...</p>
+            <p className="end-user-task-list-msg">Loading tasks...</p>
           ) : tasks.length === 0 ? (
-            <p>No active tasks</p>
+            <p className="end-user-task-list-msg">No active tasks</p>
           ) : (
-            tasks.slice(0, 5).map((t) => (
+            tasks.map((t) => (
               <button
                 key={t._id}
                 type="button"
@@ -220,13 +238,13 @@ export default function EndUserDashboard() {
               >
                 <div className="task-card-left">
                   <strong>{t.title}</strong>
-                  <span>{t.subtitle || t.category}</span>
-                  <p>{t.description}</p>
+                  <span>{t.subtitle || t.category || ""}</span>
+                  <p>{t.description || "—"}</p>
                   <span className="task-due">🕐 End time: {formatTaskEndTime(t.dueTime || t.dueDate) ?? "—"}</span>
                   <span className="task-due task-duration">⏱ Task duration: {formatTaskDuration(t.durationMinutes) ?? "—"}</span>
                 </div>
                 <span className={`task-tag ${statusStyle(t.status)}`}>
-                  {t.status?.replace(/_/g, " ") || "Pending"}
+                  {(t.status || "Pending").replace(/_/g, " ")}
                 </span>
                 <span className="task-arrow">→</span>
               </button>

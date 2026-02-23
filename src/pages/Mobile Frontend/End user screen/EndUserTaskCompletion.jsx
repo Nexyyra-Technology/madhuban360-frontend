@@ -3,7 +3,8 @@
  * -----------------------------------------------------------------------
  * - Before/After photos via CameraCapture (live camera only, no upload)
  * - Optional notes textarea
- * - submitTaskCompletion POSTs FormData to backend
+ * - On Submit: POST {{baseUrl}}/api/staff/tasks/{{taskId}}/complete (submitTaskCompletion)
+ *   with FormData: before, after (photos), notes. Auth: Bearer token.
  * - On success: navigate to /mobile/task/:id/success
  * - Route: /mobile/task/:id/complete (protected)
  */
@@ -21,6 +22,7 @@ export default function EndUserTaskCompletion() {
   const [afterPhoto, setAfterPhoto] = useState(null);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
   const [step, setStep] = useState(1);
 
   useEffect(() => {
@@ -30,6 +32,7 @@ export default function EndUserTaskCompletion() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!id) return;
+    setError("");
     setSubmitting(true);
     try {
       await submitTaskCompletion(id, {
@@ -39,7 +42,7 @@ export default function EndUserTaskCompletion() {
       });
       navigate(`/mobile/task/${id}/success`);
     } catch (e) {
-      navigate(`/mobile/task/${id}/success`);
+      setError(e?.message || "Failed to submit. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -102,10 +105,15 @@ export default function EndUserTaskCompletion() {
           />
         </div>
 
+        {error && (
+          <p className="task-completion-error" role="alert">{error}</p>
+        )}
+
+        {/* On click: POST {{baseUrl}}/api/staff/tasks/{{taskId}}/complete. Enabled when both photos are captured OR when text is written in Notes/Observations. */}
         <button
           type="submit"
           className="end-user-primary-btn full-width"
-          disabled={submitting || !beforePhoto || !afterPhoto}
+          disabled={submitting || ((!beforePhoto || !afterPhoto) && !notes.trim())}
         >
           {submitting ? "Submitting..." : "▶ Submit for Verification"}
         </button>

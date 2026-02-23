@@ -6,10 +6,8 @@
  */
 import { useState, useEffect } from "react";
 import { updateTask } from "./taskService";
-import { getUsers } from "../UserTab/userService";
+import { getUsersForAssignee, getDepartments } from "../UserTab/userService";
 import ModalWrapper from "../UserTab/ModalWrapper";
-
-const CATEGORIES = ["Cleaning", "Housekeeping"];
 const ZONES = [
   "Outside main door",
   "Reception Area HR Desk Employee Desk",
@@ -27,7 +25,7 @@ const ZONES = [
 
 export default function EditTaskModal({ task, onClose, onSuccess }) {
   const [taskName, setTaskName] = useState("");
-  const [category, setCategory] = useState("Cleaning");
+  const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [priority, setPriority] = useState("HIGH");
@@ -41,13 +39,27 @@ export default function EditTaskModal({ task, onClose, onSuccess }) {
   const [endTimeMin, setEndTimeMin] = useState("00");
   const [endTimeAmPm, setEndTimeAmPm] = useState("PM");
   const [staff, setStaff] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Backend: fetch departments for Category dropdown (GET /api/departments)
+  useEffect(() => {
+    let cancelled = false;
+    getDepartments()
+      .then((list) => {
+        if (!cancelled && Array.isArray(list)) setCategories(list);
+      })
+      .catch(() => { if (!cancelled) setCategories([]); })
+      .finally(() => { if (!cancelled) setCategoriesLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (task) {
       setTaskName(task.title || "");
-      setCategory(task.category || "Cleaning");
+      setCategory(task.category || "");
       setDescription(task.description || "");
       setAssigneeId(task.assigneeId || "");
       setPriority(task.priority || "HIGH");
@@ -82,9 +94,9 @@ export default function EditTaskModal({ task, onClose, onSuccess }) {
     }
   }, [task]);
 
-  // Backend: fetch users for assignee dropdown
+  // Backend: fetch users for assignee dropdown (GET /api/users?page=1&limit=10)
   useEffect(() => {
-    getUsers().then((users) => setStaff(Array.isArray(users) ? users : []));
+    getUsersForAssignee(1, 10).then((users) => setStaff(Array.isArray(users) ? users : []));
   }, []);
 
   // Task duration (auto-calculated from start and end time)
@@ -174,10 +186,19 @@ export default function EditTaskModal({ task, onClose, onSuccess }) {
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full border px-4 py-2 rounded-lg"
+                disabled={categoriesLoading}
               >
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
+                <option value="">Select category...</option>
+                {categories
+                  .filter((d) => (d.name ?? "").trim())
+                  .map((d) => {
+                    const name = (d.name ?? "").trim();
+                    return (
+                      <option key={d.id} value={name}>
+                        {name}
+                      </option>
+                    );
+                  })}
               </select>
             </div>
           </div>
@@ -196,7 +217,7 @@ export default function EditTaskModal({ task, onClose, onSuccess }) {
               >
                 <option value="">Select staff member...</option>
                 {staff.map((u) => (
-                  <option key={u._id} value={u._id}>{u.name}</option>
+                  <option key={u._id} value={u._id}>{u.name || u.email}</option>
                 ))}
               </select>
             </div>

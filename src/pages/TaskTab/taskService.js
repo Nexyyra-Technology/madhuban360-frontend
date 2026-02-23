@@ -16,12 +16,25 @@ import { readJsonOrThrow, getAuthHeaders } from "../../lib/apiClient";
 const API_BASE = `${API_BASE_URL}/api/tasks`;
 
 function normalizeTask(t) {
+  const rawStatus = (t.status ?? "pending").toLowerCase();
+  const statusMap = { pending: "TO_DO", in_progress: "IN_PROGRESS", review: "REVIEW", completed: "COMPLETED" };
+  const status = statusMap[rawStatus] ?? rawStatus.toUpperCase().replace(/\s/g, "_");
   return {
     ...t,
     _id: t.id ?? t._id,
-    status: (t.status ?? "todo").toUpperCase().replace(/\s/g, "_"),
+    title: t.taskName ?? t.title ?? t.task_name ?? "Untitled",
+    assignee: t.assignee ?? (t.assigneeName ? { name: t.assigneeName } : null),
+    status,
     priority: (t.priority ?? "normal").toUpperCase(),
+    dueDate: t.dueDate ? formatDueDate(t.dueDate) : t.dueDate,
+    completedAt: t.completedAt ? formatDueDate(t.completedAt) : t.completedAt,
   };
+}
+
+function formatDueDate(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toISOString().slice(0, 10);
 }
 
 /** Backend: GET /api/tasks - fetch all tasks, optionally filtered */
@@ -37,7 +50,8 @@ export async function getTasks(filters = {}) {
     const res = await fetch(url, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error("Failed to fetch tasks");
     const json = await res.json();
-    const tasks = json?.data?.tasks ?? json?.tasks ?? (Array.isArray(json) ? json : []);
+    const raw = json?.data;
+    const tasks = Array.isArray(raw) ? raw : (json?.data?.tasks ?? json?.tasks ?? (Array.isArray(json) ? json : []));
     return tasks.map(normalizeTask);
   } catch (err) {
     console.error("getTasks error:", err);

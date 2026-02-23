@@ -10,7 +10,7 @@ import WorkorderTab from "./WorkorderTab";
 import AssetTrackingTab from "./AssetTrackingTab";
 import ReportsTab from "./ReportsTab";
 import AddPropertyModal from "./AddPropertyModal";
-import { getProperties, getPropertySummary } from "./propertyService";
+import { getProperties, getPropertySummary, deleteProperty } from "./propertyService";
 
 const TAB_KEYS = {
   properties: "properties",
@@ -43,6 +43,10 @@ export default function PropertyManagement() {
   const [properties, setProperties] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [menuOpenId, setMenuOpenId] = useState(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   const loadProperties = () => {
     setLoading(true);
@@ -67,9 +71,48 @@ export default function PropertyManagement() {
     loadSummary();
   }, []);
 
+  useEffect(() => {
+    if (!menuOpenId) return;
+    const close = () => setMenuOpenId(null);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [menuOpenId]);
+
   const handleAddSuccess = () => {
     loadProperties();
     loadSummary();
+  };
+
+  const handleDeleteClick = (e, id) => {
+    e.stopPropagation();
+    setMenuOpenId(null);
+    setDeleteError(null);
+    setDeleteConfirmId(id);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirmId) return;
+    setDeleteLoading(true);
+    setDeleteError(null);
+    try {
+      const res = await deleteProperty(deleteConfirmId);
+      if (res?.success !== false) {
+        setDeleteConfirmId(null);
+        loadProperties();
+        loadSummary();
+      } else {
+        setDeleteError(res?.message || "Failed to delete property");
+      }
+    } catch (err) {
+      setDeleteError(err?.message || "Failed to delete property");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirmId(null);
+    setDeleteError(null);
   };
 
   const s = summary || { total: 42, activeAmc: 38, expiringAmc: 4, occupancyPercent: 92 };
@@ -199,7 +242,31 @@ export default function PropertyManagement() {
                     <div className="relative h-40 bg-gray-200">
                       <img src={p.image} alt="" className="w-full h-full object-cover" />
                       <span className="absolute top-3 left-3 px-2 py-0.5 bg-gray-800 text-white text-xs font-semibold rounded">{p.category}</span>
-                      <button type="button" className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center text-gray-600 hover:bg-white">⋯</button>
+                      <div className="absolute top-3 right-3">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMenuOpenId(menuOpenId === p.id ? null : p.id);
+                          }}
+                          className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center text-gray-600 hover:bg-white"
+                          aria-haspopup="true"
+                          aria-expanded={menuOpenId === p.id}
+                        >
+                          ⋯
+                        </button>
+                        {menuOpenId === p.id && (
+                          <div className="absolute right-0 top-full mt-1 py-1 w-44 bg-white rounded-lg border border-gray-200 shadow-lg z-10">
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteClick(e, p.id)}
+                              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
+                            >
+                              Delete Property
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="p-5">
                       <h3 className="text-lg font-bold text-[#0d121b]">{p.name}</h3>
@@ -264,6 +331,34 @@ export default function PropertyManagement() {
       )}
 
       <AddPropertyModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onSuccess={handleAddSuccess} />
+
+      {/* Delete confirmation modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={handleDeleteCancel}>
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <p className="text-[#0d121b] font-semibold text-center">Do you really want to delete this property?</p>
+            {deleteError && <p className="mt-2 text-sm text-red-600 text-center">{deleteError}</p>}
+            <div className="mt-6 flex gap-3 justify-center">
+              <button
+                type="button"
+                onClick={handleDeleteCancel}
+                disabled={deleteLoading}
+                className="px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteConfirm}
+                disabled={deleteLoading}
+                className="px-4 py-2.5 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleteLoading ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

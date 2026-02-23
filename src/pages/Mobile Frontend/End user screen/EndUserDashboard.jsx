@@ -241,7 +241,7 @@ export default function EndUserDashboard() {
                   <span>{t.subtitle || t.category || ""}</span>
                   <p>{t.description || "—"}</p>
                   <span className="task-due">🕐 End time: {formatTaskEndTime(t.dueTime || t.dueDate) ?? "—"}</span>
-                  <span className="task-due task-duration">⏱ Task duration: {formatTaskDuration(t.durationMinutes) ?? "—"}</span>
+                  <span className="task-due task-duration">⏱ Task duration: {formatTaskDuration(t.durationMinutes) ?? "10 min"}</span>
                 </div>
                 <span className={`task-tag ${statusStyle(t.status)}`}>
                   {(t.status || "Pending").replace(/_/g, " ")}

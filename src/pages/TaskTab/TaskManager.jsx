@@ -7,9 +7,10 @@
  */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getTasks } from "./taskService";
+import { getTasks, deleteTask } from "./taskService";
 import CreateTaskModal from "./CreateTaskModal";
 import SuccessToast from "./SuccessToast";
+import ModalWrapper from "../UserTab/ModalWrapper";
 
 const COLUMNS = [
   { key: "TO_DO", label: "TO-DO" },
@@ -26,7 +27,7 @@ const PRIORITY_STYLES = {
   NORMAL: "bg-gray-100 text-gray-700 border-gray-200",
 };
 
-function TaskCard({ task, onClick }) {
+function TaskCard({ task, onClick, onDelete }) {
   const priorityClass = PRIORITY_STYLES[task.priority] || PRIORITY_STYLES.NORMAL;
   const assigneeName = task.assignee?.name || "Unassigned";
   const initials = assigneeName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
@@ -34,11 +35,26 @@ function TaskCard({ task, onClick }) {
   return (
     <div
       onClick={() => onClick(task)}
-      className="task-card bg-white rounded-lg border shadow-sm p-4 cursor-pointer hover:shadow-md transition mb-3"
+      className="task-card bg-white rounded-lg border shadow-sm p-4 cursor-pointer hover:shadow-md transition mb-3 relative"
     >
-      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${priorityClass}`}>
-        {task.priority}
-      </span>
+      <div className="flex items-start justify-between gap-2">
+        <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${priorityClass}`}>
+          {task.priority}
+        </span>
+        {onDelete && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(task);
+            }}
+            className="shrink-0 p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50"
+            aria-label="Delete task"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          </button>
+        )}
+      </div>
       <h4 className="font-medium text-gray-900 mt-2">{task.title}</h4>
       <p className="text-sm text-gray-500 mt-1 line-clamp-2">{task.description}</p>
       <div className="flex items-center justify-between mt-3">
@@ -64,6 +80,8 @@ export default function TaskManager() {
   const [staffFilter, setStaffFilter] = useState("All Assigned");
   const [dueFilter, setDueFilter] = useState("This Week");
   const [toast, setToast] = useState(null);
+  const [taskToDelete, setTaskToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function refreshTasks() {
     setLoading(true);
@@ -94,6 +112,25 @@ export default function TaskManager() {
 
   function handleTaskClick(task) {
     navigate(`/tasks/${task._id}`);
+  }
+
+  function handleDeleteClick(task) {
+    setTaskToDelete(task);
+  }
+
+  async function handleConfirmDelete() {
+    if (!taskToDelete?._id) return;
+    setDeleting(true);
+    try {
+      await deleteTask(taskToDelete._id);
+      setTaskToDelete(null);
+      await refreshTasks();
+      setToast({ title: "Deleted", message: "Task deleted successfully." });
+    } catch (e) {
+      setToast({ title: "Error", message: e?.message || "Failed to delete task." });
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -157,7 +194,7 @@ export default function TaskManager() {
                 {col.label} ({tasksByColumn[col.key]?.length ?? 0})
               </h3>
               {(tasksByColumn[col.key] || []).map((task) => (
-                <TaskCard key={task._id} task={task} onClick={handleTaskClick} />
+                <TaskCard key={task._id} task={task} onClick={handleTaskClick} onDelete={handleDeleteClick} />
               ))}
             </div>
           ))}
@@ -172,6 +209,30 @@ export default function TaskManager() {
           onClose={() => setShowCreate(false)}
           onSuccess={handleCreateSuccess}
         />
+      )}
+
+      {taskToDelete && (
+        <ModalWrapper widthClass="w-[400px]">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete task</h3>
+          <p className="text-gray-600 mb-6">Do you really want to delete this task?</p>
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setTaskToDelete(null)}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-60"
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </button>
+          </div>
+        </ModalWrapper>
       )}
 
       {toast && (

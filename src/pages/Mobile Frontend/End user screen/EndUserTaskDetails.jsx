@@ -61,7 +61,7 @@ export default function EndUserTaskDetails() {
         <p className="task-location">📍 {task.location || task.subtitle || "3rd Floor - Deluxe Suite"}</p>
         <h3>{task.description || "Deep Clean & Linen Change"}</h3>
         <p className="task-due">🕐 End time: {formatTaskEndTime(task.dueTime || task.dueDate || task.dueBy) ?? "—"}</p>
-        <p className="task-due">⏱ Task duration: {formatTaskDuration(task.durationMinutes) ?? "—"}</p>
+        <p className="task-due">⏱ Task duration: {formatTaskDuration(task.durationMinutes) ?? "10 min"}</p>
       </div>
 
       {task.guestRequest && (

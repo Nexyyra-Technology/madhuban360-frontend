@@ -10,7 +10,7 @@
 import { Component, lazy } from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import { isManagerRole, getStoredUser } from "./lib/userUtils";
+import { isManagerRole, isSupervisorRole, getStoredUser } from "./lib/userUtils";
 import Layout from "./layout/Layout";
 import Login from "./pages/Login";
 import WelcomeScreen from "./pages/Mobile Frontend/Login page/WelcomeScreen";
@@ -32,6 +32,15 @@ import ManagerSupervisors from "./pages/Mobile Frontend/manager Screen/ManagerSu
 import ManagerReports from "./pages/Mobile Frontend/manager Screen/ManagerReports";
 import ManagerProfile from "./pages/Mobile Frontend/manager Screen/ManagerProfile";
 import NotificationsScreen from "./pages/Mobile Frontend/NotificationsScreen";
+import SupervisorDashboard from "./pages/Mobile Frontend/Supervisor Screen/SupervisorDashboard";
+import InProgress from "./pages/Mobile Frontend/Supervisor Screen/InProgress";
+import PendingTasks from "./pages/Mobile Frontend/Supervisor Screen/PendingTasks";
+import SupervisorOnGoingTasks from "./pages/Mobile Frontend/Supervisor Screen/SupervisorOnGoingTasks";
+import SupervisorTaskVerification from "./pages/Mobile Frontend/Supervisor Screen/SupervisorTaskVerification";
+import SupervisorTaskVerificationDetail from "./pages/Mobile Frontend/Supervisor Screen/SupervisorTaskVerificationDetail";
+import AttendanceLeaves from "./pages/Mobile Frontend/Supervisor Screen/AttendanceLeaves";
+import StaffList from "./pages/Mobile Frontend/Supervisor Screen/StaffList";
+import SupervisorProfile from "./pages/Mobile Frontend/Supervisor Screen/SupervisorProfile";
 import Dashboard from "./pages/DashboardTab/Dashboard";
 import PropertyManagement from "./pages/PropertyTab/PropertyManagement";
 import Reports from "./pages/Reports";
@@ -93,6 +102,13 @@ function MobileManagerRoute({ children }) {
   return children;
 }
 
+function MobileSupervisorRoute({ children }) {
+  const { user } = useAuth();
+  const u = user ?? getStoredUser();
+  if (u && !isSupervisorRole(u)) return <Navigate to="/mobile/manager/dashboard" replace />;
+  return children;
+}
+
 class ErrorBoundary extends Component {
   state = { hasError: false, error: null };
   static getDerivedStateFromError(error) {
@@ -145,6 +161,18 @@ export default function App() {
             <Route path="manager/profile" element={<MobileProtectedRoute><MobileManagerRoute><ManagerProfile /></MobileManagerRoute></MobileProtectedRoute>} />
             <Route path="manager/profile/change-password" element={<MobileProtectedRoute><MobileManagerRoute><EndUserProfileChangePassword /></MobileManagerRoute></MobileProtectedRoute>} />
             <Route path="manager/notifications" element={<MobileProtectedRoute><MobileManagerRoute><NotificationsScreen /></MobileManagerRoute></MobileProtectedRoute>} />
+            {/* Supervisor screens – role supervisor redirects from login to /mobile/supervisor/dashboard */}
+            <Route path="supervisor/dashboard" element={<MobileProtectedRoute><MobileSupervisorRoute><SupervisorDashboard /></MobileSupervisorRoute></MobileProtectedRoute>} />
+            <Route path="supervisor/in-progress" element={<MobileProtectedRoute><MobileSupervisorRoute><InProgress /></MobileSupervisorRoute></MobileProtectedRoute>} />
+            <Route path="supervisor/pending-tasks" element={<MobileProtectedRoute><MobileSupervisorRoute><PendingTasks /></MobileSupervisorRoute></MobileProtectedRoute>} />
+            <Route path="supervisor/tasks" element={<MobileProtectedRoute><MobileSupervisorRoute><SupervisorOnGoingTasks /></MobileSupervisorRoute></MobileProtectedRoute>} />
+            <Route path="supervisor/task-verification" element={<MobileProtectedRoute><MobileSupervisorRoute><SupervisorTaskVerification /></MobileSupervisorRoute></MobileProtectedRoute>} />
+            <Route path="supervisor/task-verification/:id" element={<MobileProtectedRoute><MobileSupervisorRoute><SupervisorTaskVerificationDetail /></MobileSupervisorRoute></MobileProtectedRoute>} />
+            <Route path="supervisor/attendance" element={<MobileProtectedRoute><MobileSupervisorRoute><AttendanceLeaves /></MobileSupervisorRoute></MobileProtectedRoute>} />
+            <Route path="supervisor/staff-list" element={<MobileProtectedRoute><MobileSupervisorRoute><StaffList /></MobileSupervisorRoute></MobileProtectedRoute>} />
+            <Route path="supervisor/profile" element={<MobileProtectedRoute><MobileSupervisorRoute><SupervisorProfile /></MobileSupervisorRoute></MobileProtectedRoute>} />
+            <Route path="supervisor/profile/change-password" element={<MobileProtectedRoute><MobileSupervisorRoute><EndUserProfileChangePassword /></MobileSupervisorRoute></MobileProtectedRoute>} />
+            <Route path="supervisor/notifications" element={<MobileProtectedRoute><MobileSupervisorRoute><NotificationsScreen /></MobileSupervisorRoute></MobileProtectedRoute>} />
           </Route>
           <Route
             path="/"

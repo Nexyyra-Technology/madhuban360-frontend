@@ -11,7 +11,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { mobileLogin, requestOtp, normalizeMobile } from "./mobileAuthService";
 import { useAuth } from "../../../context/AuthContext";
-import { isManagerRole } from "../../../lib/userUtils";
+import { isManagerRole, isSupervisorRole } from "../../../lib/userUtils";
 import logoIcon from "../../../assets/logo-icon.png";
 import logoText from "../../../assets/logo-text.png";
 
@@ -55,7 +55,11 @@ export default function LoginScreen() {
     try {
       const { user } = await mobileLogin(mobile, password);
       setUser(user);
-      const target = isManagerRole(user) ? "/mobile/manager/dashboard" : "/mobile/dashboard";
+      const target = isSupervisorRole(user)
+        ? "/mobile/supervisor/dashboard"
+        : isManagerRole(user)
+          ? "/mobile/manager/dashboard"
+          : "/mobile/dashboard";
       navigate(target, { replace: true });
     } catch (err) {
       setError(err?.message || "Login failed. Please try again.");

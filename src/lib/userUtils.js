@@ -8,6 +8,12 @@ export function isManagerRole(user) {
   return MANAGER_ROLES.includes(String(user.role).toLowerCase());
 }
 
+/** True only for supervisor role (for redirect to supervisor screens) */
+export function isSupervisorRole(user) {
+  if (!user?.role) return false;
+  return String(user.role).toLowerCase() === "supervisor";
+}
+
 export function getStoredUser() {
   try {
     return JSON.parse(localStorage.getItem("user") || "null");

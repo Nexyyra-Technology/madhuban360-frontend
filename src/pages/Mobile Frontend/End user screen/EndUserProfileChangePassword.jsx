@@ -16,8 +16,9 @@ import { changePassword } from "./endUserService";
 export default function EndUserProfileChangePassword() {
   const navigate = useNavigate();
   const location = useLocation();
+  const isSupervisor = location.pathname.includes("/supervisor/");
   const isManager = location.pathname.includes("/manager/");
-  const profilePath = isManager ? "/mobile/manager/profile" : "/mobile/profile";
+  const profilePath = isSupervisor ? "/mobile/supervisor/profile" : isManager ? "/mobile/manager/profile" : "/mobile/profile";
   const [current, setCurrent] = useState("");
   const [newPass, setNewPass] = useState("");
   const [confirm, setConfirm] = useState("");

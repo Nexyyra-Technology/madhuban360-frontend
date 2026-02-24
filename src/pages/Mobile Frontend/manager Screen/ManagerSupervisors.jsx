@@ -1,27 +1,22 @@
 /**
  * ManagerSupervisors – Supervisor list for managers
  * -----------------------------------------------------------------------
- * - Search bar
- * - Supervisor cards: avatar, name, role, location, shift tag, attendance %, task completion bar
+ * - Data from /api/users/supervisors + task completion from /api/tasks
  * - Route: /mobile/manager/supervisors
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ManagerBottomNav from "./ManagerBottomNav";
-
-const MOCK_SUPERVISORS = [
-  { id: 1, name: "David Chen", role: "Facility Lead", location: "East Wing", shift: "On Shift", attendance: 88, taskCompletion: 94 },
-  { id: 2, name: "Jerome Bell", role: "Housekeeping", location: "Block - A", shift: "Off Duty", attendance: 60, taskCompletion: 80 },
-  { id: 3, name: "Jane Cooper", role: "Facility Lead", location: "West Wing", shift: "On Shift", attendance: 98, taskCompletion: 70 },
-  { id: 4, name: "Robert Fox", role: "Maintenance", location: "Block - B", shift: "On Shift", attendance: 30, taskCompletion: 28 },
-];
+import { getManagerSupervisors } from "./managerService";
 
 function attendanceColor(pct) {
+  if (pct == null) return "";
   if (pct >= 80) return "text-green-600";
   if (pct >= 50) return "text-amber-600";
   return "text-red-600";
 }
 
 function completionColor(pct) {
+  if (pct == null) return "bg-gray-400";
   if (pct >= 80) return "bg-green-500";
   if (pct >= 50) return "bg-amber-500";
   return "bg-red-500";
@@ -29,11 +24,36 @@ function completionColor(pct) {
 
 export default function ManagerSupervisors() {
   const [search, setSearch] = useState("");
-  const supervisors = MOCK_SUPERVISORS.filter(
+  const [supervisors, setSupervisors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const list = await getManagerSupervisors();
+        if (!cancelled) setSupervisors(list || []);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err?.message || "Failed to load supervisors");
+          setSupervisors([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  const filtered = supervisors.filter(
     (s) =>
       !search ||
-      s.name.toLowerCase().includes(search.toLowerCase()) ||
-      s.role.toLowerCase().includes(search.toLowerCase())
+      (s.name && s.name.toLowerCase().includes(search.toLowerCase())) ||
+      (s.role && s.role.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -56,48 +76,74 @@ export default function ManagerSupervisors() {
         </div>
       </section>
 
-      <section className="manager-section">
-        <div className="manager-supervisor-cards">
-          {supervisors.map((s) => (
-            <div key={s.id} className="manager-supervisor-card">
-              <div className="manager-supervisor-card-top">
-                <div className="manager-supervisor-card-avatar-wrap">
-                  <div className="manager-supervisor-card-avatar" />
-                  <span className="manager-status-dot" />
-                </div>
-                <div className="manager-supervisor-card-info">
-                  <span className="manager-supervisor-card-name">{s.name}</span>
-                  <span className="manager-supervisor-card-role">{s.role}</span>
-                  <span className="manager-supervisor-card-location">• {s.location}</span>
-                </div>
-                <span className={`manager-shift-tag ${s.shift === "On Shift" ? "on-shift" : "off-duty"}`}>
-                  {s.shift}
-                </span>
-              </div>
-              <div className="manager-supervisor-card-stats">
-                <div className="manager-supervisor-attendance">
-                  <span>📅 Attendance:</span>
-                  <span className={attendanceColor(s.attendance)}> {s.attendance}%</span>
-                </div>
-                <div className="manager-supervisor-completion">
-                  <span>Task Completion</span>
-                  <div className="manager-completion-bar-wrap">
-                    <div className="manager-completion-track">
-                      <div
-                        className={`manager-completion-fill ${completionColor(s.taskCompletion)}`}
-                        style={{ width: `${s.taskCompletion}%` }}
-                      />
+      {loading && (
+        <section className="manager-section">
+          <p className="manager-loading">Loading supervisors…</p>
+        </section>
+      )}
+
+      {error && !loading && (
+        <section className="manager-section">
+          <p className="manager-error">{error}</p>
+        </section>
+      )}
+
+      {!loading && !error && (
+        <section className="manager-section">
+          <div className="manager-supervisor-cards">
+            {filtered.length === 0 ? (
+              <p className="manager-empty">No supervisors found.</p>
+            ) : (
+              filtered.map((s) => (
+                <div key={s.id ?? s.name} className="manager-supervisor-card">
+                  <div className="manager-supervisor-card-top">
+                    <div className="manager-supervisor-card-avatar-wrap">
+                      <div className="manager-supervisor-card-avatar" />
+                      <span className="manager-status-dot" />
                     </div>
-                    <span className={`manager-completion-pct ${attendanceColor(s.taskCompletion)}`}>
-                      {s.taskCompletion}%
+                    <div className="manager-supervisor-card-info">
+                      <span className="manager-supervisor-card-name">{s.name}</span>
+                      <span className="manager-supervisor-card-role">{s.role}</span>
+                      <span className="manager-supervisor-card-location">• {s.location}</span>
+                    </div>
+                    <span
+                      className={`manager-shift-tag ${
+                        (s.shift || "").toLowerCase().includes("on") ? "on-shift" : "off-duty"
+                      }`}
+                    >
+                      {s.shift ?? "—"}
                     </span>
                   </div>
+                  <div className="manager-supervisor-card-stats">
+                    {s.attendance != null && (
+                      <div className="manager-supervisor-attendance">
+                        <span>📅 Attendance:</span>
+                        <span className={attendanceColor(s.attendance)}> {s.attendance}%</span>
+                      </div>
+                    )}
+                    <div className="manager-supervisor-completion">
+                      <span>Task Completion</span>
+                      <div className="manager-completion-bar-wrap">
+                        <div className="manager-completion-track">
+                          <div
+                            className={`manager-completion-fill ${completionColor(s.taskCompletion)}`}
+                            style={{ width: `${s.taskCompletion ?? 0}%` }}
+                          />
+                        </div>
+                        <span
+                          className={`manager-completion-pct ${attendanceColor(s.taskCompletion)}`}
+                        >
+                          {s.taskCompletion ?? 0}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+              ))
+            )}
+          </div>
+        </section>
+      )}
 
       <ManagerBottomNav />
     </div>

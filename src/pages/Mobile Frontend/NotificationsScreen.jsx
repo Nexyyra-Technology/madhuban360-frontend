@@ -131,7 +131,7 @@ export default function NotificationsScreen() {
                   <span className="notifications-group-badge">{today.length} Active</span>
                 </div>
                 {today.map((n) => (
-                  <NotificationItem key={n.id} notification={n} config={getIconConfig(n.type)} />
+                  <NotificationItem key={n.id} notification={n} config={getIconConfig(n.type)} isManager={isManager} onNavigate={navigate} />
                 ))}
               </section>
             )}
@@ -141,7 +141,7 @@ export default function NotificationsScreen() {
                   <h3>Earlier</h3>
                 </div>
                 {earlier.map((n) => (
-                  <NotificationItem key={n.id} notification={n} config={getIconConfig(n.type)} />
+                  <NotificationItem key={n.id} notification={n} config={getIconConfig(n.type)} isManager={isManager} onNavigate={navigate} />
                 ))}
               </section>
             )}
@@ -154,16 +154,29 @@ export default function NotificationsScreen() {
   );
 }
 
-function NotificationItem({ notification, config }) {
-  const { id, title, description, createdAt, read } = notification;
+function NotificationItem({ notification, config, isManager, onNavigate }) {
+  const { id, title, description, createdAt, read, entityType, entityId } = notification;
   const style = {
     backgroundColor: config.bg,
     color: config.color,
     border: config.border ? `2px solid ${config.border}` : "none",
   };
 
+  const isTaskNotification = entityType === "task" || ["task_completed", "task_assigned"].includes(notification.type || "");
+  const handleClick = () => {
+    if (isManager && isTaskNotification && entityId) {
+      onNavigate("/mobile/manager/tasks");
+    }
+  };
+
   return (
-    <div className={`notification-item ${read ? "read" : ""}`}>
+    <div
+      className={`notification-item ${read ? "read" : ""} ${isTaskNotification && isManager ? "notification-item-clickable" : ""}`}
+      role={isTaskNotification && isManager ? "button" : undefined}
+      tabIndex={isTaskNotification && isManager ? 0 : undefined}
+      onClick={handleClick}
+      onKeyDown={(e) => isTaskNotification && isManager && (e.key === "Enter" || e.key === " ") && handleClick()}
+    >
       <div className="notification-icon" style={style}>
         {config.icon}
       </div>

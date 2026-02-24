@@ -8,6 +8,16 @@ const proxyTarget = process.env.VITE_PROXY_TARGET || "https://madhuban360-backen
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          "charts": ["recharts"],
+        },
+      },
+    },
+  },
   server: {
     host: true,
     strictPort: false,

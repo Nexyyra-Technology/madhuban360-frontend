@@ -22,18 +22,8 @@ import {
   formatTaskDuration,
   formatTaskEndTime,
 } from "./endUserService";
+import { getUserDisplayName } from "../../../lib/userUtils";
 import logoIcon from "../../../assets/logo-icon.png";
-
-function getUserDisplayName(user) {
-  if (!user) return "User";
-  if (user.fullName) return user.fullName;
-  if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
-  if (user.firstName) return user.firstName;
-  if (user.displayName) return user.displayName;
-  if (user.name && !["Admin", "User", "admin", "user"].includes(user.name)) return user.name;
-  if (user.username && !["Admin", "User", "admin", "user"].includes(user.username)) return user.username;
-  return "User";
-}
 
 function formatTimeHHMMSS(date) {
   const h = date.getHours();

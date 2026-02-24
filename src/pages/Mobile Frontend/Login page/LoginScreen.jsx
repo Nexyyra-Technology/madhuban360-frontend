@@ -11,12 +11,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { mobileLogin, requestOtp, normalizeMobile } from "./mobileAuthService";
 import { useAuth } from "../../../context/AuthContext";
-
-function isManagerRole(user) {
-  if (!user?.role) return false;
-  const r = String(user.role).toLowerCase();
-  return ["manager", "admin", "supervisor"].includes(r);
-}
+import { isManagerRole } from "../../../lib/userUtils";
 import logoIcon from "../../../assets/logo-icon.png";
 import logoText from "../../../assets/logo-text.png";
 
@@ -96,11 +91,12 @@ export default function LoginScreen() {
               <span className="mobile-input-icon">📱</span>
               <input
                 type="text"
-                inputMode={mobile.includes("@") ? "email" : "numeric"}
+                inputMode={/[a-zA-Z@.]/.test(mobile) ? "email" : "numeric"}
                 value={mobile}
                 onChange={(e) => {
                   const v = e.target.value;
-                  setMobile(v.includes("@") ? v : v.replace(/\D/g, "").slice(0, 10));
+                  const looksLikeEmail = /[a-zA-Z@.]/.test(v);
+                  setMobile(looksLikeEmail ? v : v.replace(/\D/g, "").slice(0, 10));
                 }}
                 className="mobile-input"
                 placeholder="Mobile (10 digits) or Email"

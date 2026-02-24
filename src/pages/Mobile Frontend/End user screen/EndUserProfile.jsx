@@ -13,17 +13,7 @@ import { useNavigate } from "react-router-dom";
 import MobileBottomNav from "./MobileBottomNav";
 import { useAuth } from "../../../context/AuthContext";
 import { getCurrentUser } from "./endUserService";
-
-function getUserDisplayName(user) {
-  if (!user) return "User";
-  if (user.fullName) return user.fullName;
-  if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
-  if (user.firstName) return user.firstName;
-  if (user.displayName) return user.displayName;
-  if (user.name && !["Admin", "User", "admin", "user"].includes(user.name)) return user.name;
-  if (user.username && !["Admin", "User", "admin", "user"].includes(user.username)) return user.username;
-  return "User";
-}
+import { getUserDisplayName } from "../../../lib/userUtils";
 
 const MENU_ITEMS = [
   { key: "edit", label: "Edit Profile", icon: "👥", path: "/mobile/profile/edit" },

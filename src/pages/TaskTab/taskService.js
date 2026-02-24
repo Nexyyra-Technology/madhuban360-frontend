@@ -17,7 +17,7 @@ const API_BASE = `${API_BASE_URL}/api/tasks`;
 
 function normalizeTask(t) {
   const rawStatus = (t.status ?? "pending").toLowerCase();
-  const statusMap = { pending: "TO_DO", in_progress: "IN_PROGRESS", review: "REVIEW", completed: "COMPLETED" };
+  const statusMap = { pending: "TO_DO", in_progress: "IN_PROGRESS", review: "REVIEW", completed: "COMPLETED", pending_approval: "REVIEW" };
   const status = statusMap[rawStatus] ?? rawStatus.toUpperCase().replace(/\s/g, "_");
   return {
     ...t,
@@ -61,7 +61,7 @@ export async function getTasks(filters = {}) {
     return tasks.map(normalizeTask);
   } catch (err) {
     console.error("getTasks error:", err);
-    return [...dummyTasks, ...localTasks];
+    throw err;
   }
 }
 
@@ -75,9 +75,7 @@ export async function getTaskById(id) {
     return normalizeTask(task);
   } catch (err) {
     console.error("getTaskById error:", err);
-    const all = [...dummyTasks, ...localTasks];
-    const found = all.find((t) => String(t._id) === String(id));
-    return found || null;
+    throw err;
   }
 }
 
@@ -93,44 +91,22 @@ export async function createTask(data) {
 
 /** Backend: PUT /api/tasks/:id - update task; changes saved to backend/database */
 export async function updateTask(id, data) {
-  try {
-    const res = await fetch(`${API_BASE}/${id}`, {
-      method: "PUT",
-      headers: getAuthHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(data),
-    });
-    return await readJsonOrThrow(res);
-  } catch (err) {
-    // Fallback: update local task when backend unavailable
-    const idx = localTasks.findIndex((t) => String(t._id) === String(id));
-    if (idx >= 0) {
-      localTasks[idx] = normalizeTask({ ...localTasks[idx], ...data });
-      return { data: localTasks[idx] };
-    }
-    const all = [...dummyTasks, ...localTasks];
-    const found = all.find((t) => String(t._id) === String(id));
-    if (found) return { data: { ...found, ...data } };
-    throw err;
-  }
+  const res = await fetch(`${API_BASE}/${id}`, {
+    method: "PUT",
+    headers: getAuthHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data),
+  });
+  return await readJsonOrThrow(res);
 }
 
 /** Backend: PATCH /api/tasks/:id/status - update task status only */
 export async function updateTaskStatus(id, status) {
-  try {
-    const res = await fetch(`${API_BASE}/${id}/status`, {
-      method: "PATCH",
-      headers: getAuthHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ status }),
-    });
-    return await readJsonOrThrow(res);
-  } catch (err) {
-    const idx = localTasks.findIndex((t) => String(t._id) === String(id));
-    if (idx >= 0) {
-      localTasks[idx].status = status;
-      return { data: localTasks[idx] };
-    }
-    return { data: { status } };
-  }
+  const res = await fetch(`${API_BASE}/${id}/status`, {
+    method: "PATCH",
+    headers: getAuthHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ status }),
+  });
+  return await readJsonOrThrow(res);
 }
 
 /** Backend: DELETE /api/tasks/:id - delete task */
@@ -142,15 +118,23 @@ export async function deleteTask(id) {
   return await readJsonOrThrow(res);
 }
 
-/** Client-side fallback: tasks created when backend returns 404/error (for runnable app) */
-let localTasks = [];
+/** Backend: POST /api/tasks/:id/approve - manager approves completed task (sets status to COMPLETED) */
+export async function approveTask(taskId) {
+  const res = await fetch(`${API_BASE}/${taskId}/approve`, {
+    method: "POST",
+    headers: getAuthHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ approved: true }),
+  });
+  return await readJsonOrThrow(res);
+}
 
-/** Fallback dummy tasks when backend unavailable (for demo/runnable app) */
-const dummyTasks = [
-  { _id: "1", title: "HVAC Compressor Repair", description: "Unit B-12 reporting abnormal noise and performance drop.", status: "TO_DO", priority: "HIGH", assignee: { name: "MC M. Chen" }, dueDate: "2025-10-25", category: "Maintenance", location: "East Wing, Ground Floor" },
-  { _id: "2", title: "Fire Alarm System Test", description: "Monthly routine inspection for building safety compliance.", status: "TO_DO", priority: "MEDIUM", assignee: { name: "S. Blake" }, dueDate: "2025-10-25", category: "Maintenance" },
-  { _id: "3", title: "Floor 2 Janitorial Deep Clean", description: "Post-event cleanup required for conference rooms A-D.", status: "IN_PROGRESS", priority: "URGENT", assignee: { name: "JT J. Thompson" }, progress: 60, category: "Cleaning" },
-  { _id: "4", title: "Roof Inspection - Phase 1", description: "Completed visual check for leaks after heavy rain. Photos uploaded.", status: "REVIEW", priority: "LOW", assignee: { name: "D. Vance" }, category: "Inspection" },
-  { _id: "5", title: "Parking Lot Lighting Audit", description: "Replaced 4 flickering LED units in Section C.", status: "COMPLETED", priority: "NORMAL", assignee: { name: "K. Miller" }, completedAt: "2h ago" },
-  { _id: "6", title: "HVAC Maintenance - #TK-8829", description: "Perform semi-annual maintenance check on the main HVAC unit (Unit-H4).", status: "IN_PROGRESS", priority: "HIGH", assignee: { name: "Mike Ross" }, assignedBy: { name: "Alex Rivera" }, location: "North Tower, Floor 4, Server Room B", category: "Preventive Maintenance", dueDate: "2025-10-24" },
-];
+/** Backend: POST /api/tasks/:id/reject - manager rejects task (sends back for rework) */
+export async function rejectTask(taskId) {
+  const res = await fetch(`${API_BASE}/${taskId}/reject`, {
+    method: "POST",
+    headers: getAuthHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ rejected: true }),
+  });
+  return await readJsonOrThrow(res);
+}
+

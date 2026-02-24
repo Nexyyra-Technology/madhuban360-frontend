@@ -50,8 +50,7 @@ export async function getUsers() {
     return users.map(normalizeUser);
   } catch (err) {
     console.error("getUsers error:", err);
-
-    return dummyUsers;
+    throw err;
   }
 }
 
@@ -194,7 +193,7 @@ export async function createUser(data) {
   return await readJsonOrThrow(res);
 }
 
-export async function exportUsersToExcel(users) {
+export async function exportUsersToExcel(users = []) {
   const XLSX = await import("xlsx");
   const rows = (users || []).map((u) => ({
     ID: u._id ?? "",
@@ -211,34 +210,3 @@ export async function exportUsersToExcel(users) {
   XLSX.utils.book_append_sheet(wb, ws, "Users");
   XLSX.writeFile(wb, `users-export-${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
-
-const dummyUsers = [
-  {
-    _id: "1",
-    name: "Johnathan Doe",
-    email: "j.doe@facilitymanagement.com",
-    phone: "+1 (555) 902-3481",
-    role: "Admin",
-    status: "Active",
-    jobTitle: "Senior Facility Manager",
-    lastLogin: "2 hours ago",
-    tasks: 1284,
-    completionRate: 98.2,
-    attendance: 96.5,
-    pendingRequests: 5,
-  },
-  {
-    _id: "2",
-    name: "Sarah Chen",
-    email: "s.chen@facilitymanagement.com",
-    phone: "+1 (555) 123-4567",
-    role: "Manager",
-    status: "Active",
-    jobTitle: "Facility Manager",
-    lastLogin: "5 mins ago",
-    tasks: 540,
-    completionRate: 95.1,
-    attendance: 93.2,
-    pendingRequests: 2,
-  },
-];

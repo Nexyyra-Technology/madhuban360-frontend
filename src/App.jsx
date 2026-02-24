@@ -5,11 +5,12 @@
  * - Mobile routes: /mobile/* (Welcome, Splash, Login, OTP, ChangePassword, Dashboard, Tasks, Profile, Reports)
  * - Mobile protected routes: require token, else redirect to /mobile/login
  * - Role-based redirect: Manager/Admin → manager screens, Staff → end-user screens
- * - mobile-login-wrapper: max-width 430px container for mobile-first layout
+ * - Lazy-loaded heavy routes for faster initial render
  */
-import { Component } from "react";
+import { Component, lazy } from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { isManagerRole, getStoredUser } from "./lib/userUtils";
 import Layout from "./layout/Layout";
 import Login from "./pages/Login";
 import WelcomeScreen from "./pages/Mobile Frontend/Login page/WelcomeScreen";
@@ -32,20 +33,21 @@ import ManagerReports from "./pages/Mobile Frontend/manager Screen/ManagerReport
 import ManagerProfile from "./pages/Mobile Frontend/manager Screen/ManagerProfile";
 import NotificationsScreen from "./pages/Mobile Frontend/NotificationsScreen";
 import Dashboard from "./pages/DashboardTab/Dashboard";
-import UserManagement from "./pages/UserTab/UserManagement";
-import UserSummary from "./pages/UserTab/UserSummary";
-import EditUser from "./pages/UserTab/EditUser";
-import ChangeUserRole from "./pages/UserTab/ChangeUserRole";
 import PropertyManagement from "./pages/PropertyTab/PropertyManagement";
-import TaskManager from "./pages/TaskTab/TaskManager";
-import TaskDetails from "./pages/TaskTab/TaskDetails";
-import HRMS from "./pages/HRMS";
-import SalesAndLease from "./pages/SalesAndLease";
-import FacilityManagement from "./pages/FacilityManagement";
-import Legal from "./pages/Legal";
-import Accounts from "./pages/Accounts";
-import Store from "./pages/Store";
 import Reports from "./pages/Reports";
+
+const UserManagement = lazy(() => import("./pages/UserTab/UserManagement"));
+const UserSummary = lazy(() => import("./pages/UserTab/UserSummary"));
+const EditUser = lazy(() => import("./pages/UserTab/EditUser"));
+const ChangeUserRole = lazy(() => import("./pages/UserTab/ChangeUserRole"));
+const TaskManager = lazy(() => import("./pages/TaskTab/TaskManager"));
+const TaskDetails = lazy(() => import("./pages/TaskTab/TaskDetails"));
+const HRMS = lazy(() => import("./pages/HRMS"));
+const SalesAndLease = lazy(() => import("./pages/SalesAndLease"));
+const FacilityManagement = lazy(() => import("./pages/FacilityManagement"));
+const Legal = lazy(() => import("./pages/Legal"));
+const Accounts = lazy(() => import("./pages/Accounts"));
+const Store = lazy(() => import("./pages/Store"));
 
 const PROTECTED_ROUTES = [
   { path: "/", element: <Dashboard />, index: true },
@@ -71,12 +73,6 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-function isManagerRole(user) {
-  if (!user?.role) return false;
-  const r = String(user.role).toLowerCase();
-  return ["manager", "admin", "supervisor"].includes(r);
-}
-
 function MobileProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
   if (!token) return <Navigate to="/mobile/login" replace />;
@@ -85,20 +81,14 @@ function MobileProtectedRoute({ children }) {
 
 function MobileStaffRoute({ children }) {
   const { user } = useAuth();
-  let u = user;
-  if (!u) {
-    try { u = JSON.parse(localStorage.getItem("user") || "null"); } catch {}
-  }
+  const u = user ?? getStoredUser();
   if (u && isManagerRole(u)) return <Navigate to="/mobile/manager/dashboard" replace />;
   return children;
 }
 
 function MobileManagerRoute({ children }) {
   const { user } = useAuth();
-  let u = user;
-  if (!u) {
-    try { u = JSON.parse(localStorage.getItem("user") || "null"); } catch {}
-  }
+  const u = user ?? getStoredUser();
   if (u && !isManagerRole(u)) return <Navigate to="/mobile/dashboard" replace />;
   return children;
 }
@@ -153,6 +143,7 @@ export default function App() {
             <Route path="manager/supervisors" element={<MobileProtectedRoute><MobileManagerRoute><ManagerSupervisors /></MobileManagerRoute></MobileProtectedRoute>} />
             <Route path="manager/reports" element={<MobileProtectedRoute><MobileManagerRoute><ManagerReports /></MobileManagerRoute></MobileProtectedRoute>} />
             <Route path="manager/profile" element={<MobileProtectedRoute><MobileManagerRoute><ManagerProfile /></MobileManagerRoute></MobileProtectedRoute>} />
+            <Route path="manager/profile/change-password" element={<MobileProtectedRoute><MobileManagerRoute><EndUserProfileChangePassword /></MobileManagerRoute></MobileProtectedRoute>} />
             <Route path="manager/notifications" element={<MobileProtectedRoute><MobileManagerRoute><NotificationsScreen /></MobileManagerRoute></MobileProtectedRoute>} />
           </Route>
           <Route
@@ -171,6 +162,7 @@ export default function App() {
               )
             )}
           </Route>
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </AuthProvider>
     </ErrorBoundary>

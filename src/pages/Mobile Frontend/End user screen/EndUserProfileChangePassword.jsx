@@ -8,12 +8,16 @@
  * - Route: /mobile/profile/change-password (protected)
  */
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import MobileBottomNav from "./MobileBottomNav";
+import ManagerBottomNav from "../manager Screen/ManagerBottomNav";
 import { changePassword } from "./endUserService";
 
 export default function EndUserProfileChangePassword() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isManager = location.pathname.includes("/manager/");
+  const profilePath = isManager ? "/mobile/manager/profile" : "/mobile/profile";
   const [current, setCurrent] = useState("");
   const [newPass, setNewPass] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -38,7 +42,7 @@ export default function EndUserProfileChangePassword() {
     setLoading(true);
     try {
       await changePassword(current, newPass);
-      navigate("/mobile/profile");
+      navigate(profilePath);
     } catch (e) {
       setError(e?.message || "Failed to change password.");
     } finally {
@@ -49,7 +53,7 @@ export default function EndUserProfileChangePassword() {
   return (
     <div className="mobile-end-user-screen mobile-change-pwd">
       <header className="end-user-page-header">
-        <button type="button" className="mobile-back-btn" onClick={() => navigate("/mobile/profile")}>←</button>
+        <button type="button" className="mobile-back-btn" onClick={() => navigate(profilePath)}>←</button>
         <h1>Change Password</h1>
       </header>
       <form onSubmit={handleSubmit} className="mobile-change-pwd-content">
@@ -68,7 +72,7 @@ export default function EndUserProfileChangePassword() {
         </div>
         <button type="submit" className="mobile-btn-primary" disabled={loading}>{loading ? "Updating..." : "Update Password"}</button>
       </form>
-      <MobileBottomNav />
+      {isManager ? <ManagerBottomNav /> : <MobileBottomNav />}
     </div>
   );
 }

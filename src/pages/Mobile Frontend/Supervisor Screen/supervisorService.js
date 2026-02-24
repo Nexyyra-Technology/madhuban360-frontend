@@ -2,9 +2,11 @@
  * Supervisor API Service
  * ---------------------
  * Reuses manager/task APIs for supervisor-scoped data.
- * Backend: /api/tasks, /api/users, /api/users/me
+ * Backend: /api/tasks, /api/users, /api/users/me, /api/supervisor/dashboard
  */
 
+import { API_BASE_URL } from "../../../config/api";
+import { getAuthHeaders } from "../../../lib/apiClient";
 import {
   getManagerTasks,
   getManagerSupervisors,
@@ -16,6 +18,105 @@ import {
 import { getTaskById, updateTaskStatus } from "../../TaskTab/taskService";
 
 export { getManagerProfile as getSupervisorProfile };
+
+/** GET /api/supervisor/dashboard – supervisor name, org, summary (completed, pending), staff online */
+export async function getSupervisorDashboard() {
+  const url = `${API_BASE_URL}/api/supervisor/dashboard`.replace(/([^:]\/)\/+/g, "$1");
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = json?.message ?? json?.error ?? `Request failed (${res.status})`;
+    throw new Error(msg);
+  }
+  if (!json?.success || json?.data == null) {
+    throw new Error("Invalid dashboard response");
+  }
+  return json.data;
+}
+
+function toMinutes(duration) {
+  if (duration == null) return null;
+  if (typeof duration === "number" && Number.isFinite(duration)) return duration;
+  const str = String(duration).trim();
+  if (!str) return null;
+  // Accept "90", "90m", "1h 30m", "01:30"
+  const asNum = Number(str.replace(/[^\d.]/g, ""));
+  if (Number.isFinite(asNum) && /^\d+(\.\d+)?$/.test(str.replace(/[^\d.]/g, "")) && !/[h:]/i.test(str)) {
+    return Math.round(asNum);
+  }
+  const hm = str.match(/(\d+)\s*h(?:\s*(\d+)\s*m)?/i);
+  if (hm) return (Number(hm[1]) || 0) * 60 + (Number(hm[2]) || 0);
+  const colon = str.match(/^(\d{1,2}):(\d{2})$/);
+  if (colon) return (Number(colon[1]) || 0) * 60 + (Number(colon[2]) || 0);
+  return null;
+}
+
+function normalizeCompletedTask(t) {
+  return {
+    id: t?.id ?? t?._id,
+    title: t?.taskName ?? t?.title ?? "Untitled Task",
+    location:
+      t?.locationFloor ??
+      t?.roomNumber ??
+      t?.propertyName ??
+      t?.location ??
+      "—",
+    supervisor: t?.assigneeName ?? t?.supervisor ?? "—",
+    priority: t?.priority ?? null,
+    startedAt: t?.startTime ?? t?.createdAt ?? t?.updatedAt ?? null,
+    estimatedMinutes: toMinutes(t?.timeDuration) ?? 120,
+    raw: t,
+  };
+}
+
+function normalizePendingTask(t) {
+  return {
+    id: t?.id ?? t?._id,
+    title: t?.taskName ?? t?.title ?? "Untitled Task",
+    propertyName: t?.propertyName ?? t?.property ?? null,
+    location:
+      t?.locationFloor ??
+      t?.roomNumber ??
+      t?.propertyName ??
+      t?.location ??
+      "—",
+    supervisor: t?.assigneeName ?? t?.supervisor ?? "—",
+    priority: t?.priority ?? null,
+    dueDate: t?.dueDate ?? null,
+    estimatedMinutes: toMinutes(t?.timeDuration) ?? 120,
+    raw: t,
+  };
+}
+
+/** GET /api/supervisor/tasks/completed – completed tasks for supervisor */
+export async function getSupervisorCompletedTasks() {
+  const url = `${API_BASE_URL}/api/supervisor/tasks/completed`.replace(/([^:]\/)\/+/g, "$1");
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = json?.message ?? json?.error ?? `Request failed (${res.status})`;
+    throw new Error(msg);
+  }
+  if (!json?.success || !Array.isArray(json?.data)) {
+    throw new Error("Invalid completed tasks response");
+  }
+  return json.data.map(normalizeCompletedTask);
+}
+
+/** GET /api/supervisor/tasks/pending – pending tasks for supervisor */
+export async function getSupervisorPendingTasks() {
+  const url = `${API_BASE_URL}/api/supervisor/tasks/pending`.replace(/([^:]\/)\/+/g, "$1");
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = json?.message ?? json?.error ?? `Request failed (${res.status})`;
+    throw new Error(msg);
+  }
+  if (!json?.success || !Array.isArray(json?.data)) {
+    throw new Error("Invalid pending tasks response");
+  }
+  return json.data.map(normalizePendingTask);
+}
 
 /** Fetch tasks for supervisor dashboard (In Progress + Pending counts, lists) */
 export async function getSupervisorTasks(filters = {}) {

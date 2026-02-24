@@ -2809,8 +2809,16 @@ body {
 }
 .supervisor-dashboard-header .manager-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--border); display: block; }
 .supervisor-dashboard-header .manager-greeting { font-size: 20px; font-weight: 700; margin: 0 0 4px 0; color: var(--text-primary); }
-.supervisor-dashboard-header .manager-location { font-size: 14px; color: var(--text-secondary); margin: 0; }
-.supervisor-dashboard-header .manager-notify { position: relative; width: 40px; height: 40px; border: none; background: var(--border-light); border-radius: 50%; font-size: 18px; cursor: pointer; }
+.supervisor-dashboard-header .manager-location {
+  font-size: 14px; color: var(--text-secondary); margin: 0;
+  display: flex; align-items: center; gap: 4px;
+}
+.supervisor-header-location-icon { width: 16px; height: 16px; flex-shrink: 0; color: var(--text-secondary); }
+.supervisor-dashboard-header .manager-notify {
+  position: relative; width: 40px; height: 40px; border: none; background: var(--border-light); border-radius: 50%;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.supervisor-header-bell-icon { width: 22px; height: 22px; color: var(--text-primary); }
 .supervisor-summary-section { margin-bottom: 24px; }
 .supervisor-dashboard-title { font-size: 18px; font-weight: 700; margin: 0 0 16px 0; color: var(--text-primary); }
 .supervisor-summary-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -2818,7 +2826,8 @@ body {
   display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px; background: var(--bg-surface); border-radius: var(--radius-lg); border: 1px solid var(--border); cursor: pointer; transition: box-shadow 0.2s; text-align: center;
 }
 .supervisor-summary-card:hover { box-shadow: var(--shadow-card); }
-.supervisor-summary-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.supervisor-summary-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.supervisor-summary-card-icon { width: 26px; height: 26px; }
 .supervisor-summary-icon-blue { background: #dbeafe; color: #1d4ed8; }
 .supervisor-summary-icon-orange { background: #ffedd5; color: #ea580c; }
 .supervisor-staff-online-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
@@ -2828,7 +2837,19 @@ body {
 .supervisor-staff-avatar-placeholder {
   width: 36px; height: 36px; border-radius: 50%; background: #facc15; color: var(--text-primary); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0;
 }
-.supervisor-search-btn { width: 40px; height: 40px; border: none; background: var(--border-light); border-radius: 50%; font-size: 16px; cursor: pointer; }
+.supervisor-search-btn {
+  width: 40px; height: 40px; border: none; background: var(--border-light); border-radius: 50%;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.supervisor-search-icon { width: 20px; height: 20px; color: var(--text-secondary); }
+.supervisor-staff-list { gap: 12px; }
+.manager-supervisor-card-avatar-img {
+  width: 48px; height: 48px; border-radius: 50%; object-fit: cover; display: block;
+}
+.supervisor-staff-card .manager-supervisor-card-location {
+  display: flex; align-items: center; gap: 4px;
+}
+.supervisor-staff-location-icon { width: 14px; height: 14px; flex-shrink: 0; color: var(--text-muted); }
 .supervisor-staff-list { gap: 12px; }
 .supervisor-staff-card {
   display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--border);
@@ -3018,4 +3039,3 @@ body {
 }
 .supervisor-logout-icon { font-size: 16px; }
 .supervisor-profile-version { font-size: 12px; color: var(--text-muted); margin-top: 24px; text-align: center; }
-.supervisor-bottom-nav .mobile-nav-item.active { border-top: 2px solid var(--accent); }

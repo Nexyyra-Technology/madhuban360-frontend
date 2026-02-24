@@ -34,7 +34,7 @@ import ManagerProfile from "./pages/Mobile Frontend/manager Screen/ManagerProfil
 import NotificationsScreen from "./pages/Mobile Frontend/NotificationsScreen";
 import SupervisorLayout from "./pages/Mobile Frontend/Supervisor Screen/SupervisorLayout";
 import SupervisorDashboard from "./pages/Mobile Frontend/Supervisor Screen/SupervisorDashboard";
-import InProgress from "./pages/Mobile Frontend/Supervisor Screen/InProgress";
+import CompletedTasks from "./pages/Mobile Frontend/Supervisor Screen/CompletedTasks";
 import PendingTasks from "./pages/Mobile Frontend/Supervisor Screen/PendingTasks";
 import SupervisorOnGoingTasks from "./pages/Mobile Frontend/Supervisor Screen/SupervisorOnGoingTasks";
 import SupervisorTaskVerification from "./pages/Mobile Frontend/Supervisor Screen/SupervisorTaskVerification";
@@ -166,7 +166,7 @@ export default function App() {
             <Route path="supervisor" element={<MobileProtectedRoute><MobileSupervisorRoute><SupervisorLayout /></MobileSupervisorRoute></MobileProtectedRoute>}>
               <Route index element={<Navigate to="/mobile/supervisor/dashboard" replace />} />
               <Route path="dashboard" element={<SupervisorDashboard />} />
-              <Route path="in-progress" element={<InProgress />} />
+              <Route path="in-progress" element={<CompletedTasks />} />
               <Route path="pending-tasks" element={<PendingTasks />} />
               <Route path="tasks" element={<SupervisorOnGoingTasks />} />
               <Route path="task-verification" element={<SupervisorTaskVerification />} />

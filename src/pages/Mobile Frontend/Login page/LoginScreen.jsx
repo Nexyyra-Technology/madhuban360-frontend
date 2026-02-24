@@ -9,6 +9,7 @@
  */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { MdArrowBack, MdPhoneIphone, MdLock } from "react-icons/md";
 import { mobileLogin, requestOtp, normalizeMobile } from "./mobileAuthService";
 import { useAuth } from "../../../context/AuthContext";
 import { isManagerRole, isSupervisorRole } from "../../../lib/userUtils";
@@ -76,7 +77,7 @@ export default function LoginScreen() {
         onClick={() => navigate("/mobile/splash")}
         aria-label="Back"
       >
-        ←
+        <MdArrowBack className="mobile-back-icon" />
       </button>
       <div className="mobile-login-content">
         <div className="mobile-login-brand">
@@ -90,9 +91,9 @@ export default function LoginScreen() {
             </div>
           ) : null}
           <div className="mobile-field">
-            <label className="mobile-label">Mobile Number or Email</label>
+            <label className="mobile-label">Mobile Number</label>
             <div className="mobile-input-wrap">
-              <span className="mobile-input-icon">📱</span>
+              <MdPhoneIphone className="mobile-input-icon" aria-hidden />
               <input
                 type="text"
                 inputMode={/[a-zA-Z@.]/.test(mobile) ? "email" : "numeric"}
@@ -103,7 +104,7 @@ export default function LoginScreen() {
                   setMobile(looksLikeEmail ? v : v.replace(/\D/g, "").slice(0, 10));
                 }}
                 className="mobile-input"
-                placeholder="Mobile (10 digits) or Email"
+                placeholder="Enter 10 digit mobile no"
                 required
                 autoComplete="username"
               />
@@ -112,7 +113,7 @@ export default function LoginScreen() {
           <div className="mobile-field">
             <label className="mobile-label">Password</label>
             <div className="mobile-input-wrap">
-              <span className="mobile-input-icon">🔑</span>
+              <MdLock className="mobile-input-icon" aria-hidden />
               <input
                 type="password"
                 value={password}
@@ -137,7 +138,7 @@ export default function LoginScreen() {
           </button>
         </form>
       </div>
-      <p className="mobile-footer-copy">Madhuban Group © 2026</p>
+      <p className="mobile-footer-copy">Madhuban Group © 2024</p>
     </div>
   );
 }

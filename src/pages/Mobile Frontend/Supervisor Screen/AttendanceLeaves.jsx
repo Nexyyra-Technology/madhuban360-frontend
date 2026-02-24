@@ -4,7 +4,6 @@
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import SupervisorBottomNav from "./SupervisorBottomNav";
 import { getAttendanceLeaveData } from "./supervisorService";
 
 export default function AttendanceLeaves() {
@@ -126,7 +125,6 @@ export default function AttendanceLeaves() {
         </>
       )}
 
-      <SupervisorBottomNav />
     </div>
   );
 }

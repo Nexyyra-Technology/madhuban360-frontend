@@ -4,7 +4,6 @@
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import SupervisorBottomNav from "./SupervisorBottomNav";
 import TaskDetailsPopup from "./TaskDetailsPopup";
 import { getSupervisorTasks } from "./supervisorService";
 
@@ -150,7 +149,6 @@ export default function InProgress() {
         />
       )}
 
-      <SupervisorBottomNav />
     </div>
   );
 }

@@ -32,6 +32,7 @@ import ManagerSupervisors from "./pages/Mobile Frontend/manager Screen/ManagerSu
 import ManagerReports from "./pages/Mobile Frontend/manager Screen/ManagerReports";
 import ManagerProfile from "./pages/Mobile Frontend/manager Screen/ManagerProfile";
 import NotificationsScreen from "./pages/Mobile Frontend/NotificationsScreen";
+import SupervisorLayout from "./pages/Mobile Frontend/Supervisor Screen/SupervisorLayout";
 import SupervisorDashboard from "./pages/Mobile Frontend/Supervisor Screen/SupervisorDashboard";
 import InProgress from "./pages/Mobile Frontend/Supervisor Screen/InProgress";
 import PendingTasks from "./pages/Mobile Frontend/Supervisor Screen/PendingTasks";
@@ -161,18 +162,21 @@ export default function App() {
             <Route path="manager/profile" element={<MobileProtectedRoute><MobileManagerRoute><ManagerProfile /></MobileManagerRoute></MobileProtectedRoute>} />
             <Route path="manager/profile/change-password" element={<MobileProtectedRoute><MobileManagerRoute><EndUserProfileChangePassword /></MobileManagerRoute></MobileProtectedRoute>} />
             <Route path="manager/notifications" element={<MobileProtectedRoute><MobileManagerRoute><NotificationsScreen /></MobileManagerRoute></MobileProtectedRoute>} />
-            {/* Supervisor screens – role supervisor redirects from login to /mobile/supervisor/dashboard */}
-            <Route path="supervisor/dashboard" element={<MobileProtectedRoute><MobileSupervisorRoute><SupervisorDashboard /></MobileSupervisorRoute></MobileProtectedRoute>} />
-            <Route path="supervisor/in-progress" element={<MobileProtectedRoute><MobileSupervisorRoute><InProgress /></MobileSupervisorRoute></MobileProtectedRoute>} />
-            <Route path="supervisor/pending-tasks" element={<MobileProtectedRoute><MobileSupervisorRoute><PendingTasks /></MobileSupervisorRoute></MobileProtectedRoute>} />
-            <Route path="supervisor/tasks" element={<MobileProtectedRoute><MobileSupervisorRoute><SupervisorOnGoingTasks /></MobileSupervisorRoute></MobileProtectedRoute>} />
-            <Route path="supervisor/task-verification" element={<MobileProtectedRoute><MobileSupervisorRoute><SupervisorTaskVerification /></MobileSupervisorRoute></MobileProtectedRoute>} />
-            <Route path="supervisor/task-verification/:id" element={<MobileProtectedRoute><MobileSupervisorRoute><SupervisorTaskVerificationDetail /></MobileSupervisorRoute></MobileProtectedRoute>} />
-            <Route path="supervisor/attendance" element={<MobileProtectedRoute><MobileSupervisorRoute><AttendanceLeaves /></MobileSupervisorRoute></MobileProtectedRoute>} />
-            <Route path="supervisor/staff-list" element={<MobileProtectedRoute><MobileSupervisorRoute><StaffList /></MobileSupervisorRoute></MobileProtectedRoute>} />
-            <Route path="supervisor/profile" element={<MobileProtectedRoute><MobileSupervisorRoute><SupervisorProfile /></MobileSupervisorRoute></MobileProtectedRoute>} />
-            <Route path="supervisor/profile/change-password" element={<MobileProtectedRoute><MobileSupervisorRoute><EndUserProfileChangePassword /></MobileSupervisorRoute></MobileProtectedRoute>} />
-            <Route path="supervisor/notifications" element={<MobileProtectedRoute><MobileSupervisorRoute><NotificationsScreen /></MobileSupervisorRoute></MobileProtectedRoute>} />
+            {/* Supervisor screens – SupervisorLayout shows bottom nav on all supervisor pages */}
+            <Route path="supervisor" element={<MobileProtectedRoute><MobileSupervisorRoute><SupervisorLayout /></MobileSupervisorRoute></MobileProtectedRoute>}>
+              <Route index element={<Navigate to="/mobile/supervisor/dashboard" replace />} />
+              <Route path="dashboard" element={<SupervisorDashboard />} />
+              <Route path="in-progress" element={<InProgress />} />
+              <Route path="pending-tasks" element={<PendingTasks />} />
+              <Route path="tasks" element={<SupervisorOnGoingTasks />} />
+              <Route path="task-verification" element={<SupervisorTaskVerification />} />
+              <Route path="task-verification/:id" element={<SupervisorTaskVerificationDetail />} />
+              <Route path="attendance" element={<AttendanceLeaves />} />
+              <Route path="staff-list" element={<StaffList />} />
+              <Route path="profile" element={<SupervisorProfile />} />
+              <Route path="profile/change-password" element={<EndUserProfileChangePassword />} />
+              <Route path="notifications" element={<NotificationsScreen />} />
+            </Route>
           </Route>
           <Route
             path="/"

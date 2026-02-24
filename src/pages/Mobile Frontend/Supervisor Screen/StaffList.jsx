@@ -4,7 +4,6 @@
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import SupervisorBottomNav from "./SupervisorBottomNav";
 import { getStaffList } from "./supervisorService";
 
 const TABS = ["All Staff", "Present", "Absent"];
@@ -118,7 +117,6 @@ export default function StaffList() {
         )}
       </section>
 
-      <SupervisorBottomNav />
     </div>
   );
 }

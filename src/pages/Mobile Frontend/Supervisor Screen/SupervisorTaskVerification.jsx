@@ -4,7 +4,6 @@
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import SupervisorBottomNav from "./SupervisorBottomNav";
 import { getSupervisorTasks, approveTask, rejectTask } from "./supervisorService";
 
 function formatTime(iso) {
@@ -155,7 +154,6 @@ export default function SupervisorTaskVerification() {
         </section>
       )}
 
-      <SupervisorBottomNav />
     </div>
   );
 }

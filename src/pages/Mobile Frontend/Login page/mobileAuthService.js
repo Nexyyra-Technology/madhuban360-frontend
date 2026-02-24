@@ -12,8 +12,8 @@
 
 import { API_BASE_URL } from "../../../config/api";
 
-// Backend may use different paths; try in order until non-404
-const LOGIN_PATHS = ["/api/users/login", "/api/auth/login", "/api/auth/mobile-login", "/api/login"];
+// Backend: single login endpoint
+const LOGIN_PATH = "/api/auth/login";
 const FORGOT_PATHS = ["/api/auth/forgot-password", "/api/auth/send-otp", "/api/users/forgot-password"];
 const VERIFY_OTP_PATHS = ["/api/auth/verify-otp", "/api/auth/verify", "/api/users/verify-otp"];
 const RESET_PATHS = ["/api/auth/reset-password", "/api/auth/change-password", "/api/users/reset-password"];
@@ -55,17 +55,14 @@ export async function mobileLogin(mobile, password) {
   let lastRes;
   let lastData = {};
   try {
-    for (const path of LOGIN_PATHS) {
-      const url = `${API_BASE_URL}${path}`.replace(/([^:]\/)\/+/g, "$1");
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
-      });
-      lastRes = res;
-      lastData = await res.json().catch(() => ({}));
-      if (res.status !== 404) break;
-    }
+    const url = `${API_BASE_URL}${LOGIN_PATH}`.replace(/([^:]\/)\/+/g, "$1");
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+    });
+    lastRes = res;
+    lastData = await res.json().catch(() => ({}));
   } catch (err) {
     const msg = err?.message || "";
     if (msg.toLowerCase().includes("fetch") || msg.toLowerCase().includes("network")) {

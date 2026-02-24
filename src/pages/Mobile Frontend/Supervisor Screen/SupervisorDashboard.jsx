@@ -4,7 +4,6 @@
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import SupervisorBottomNav from "./SupervisorBottomNav";
 import { useAuth } from "../../../context/AuthContext";
 import { getSupervisorTasks, getSupervisorStaff, getSupervisorDashboardStats } from "./supervisorService";
 import { getNotifications } from "../notificationService";
@@ -42,7 +41,9 @@ export default function SupervisorDashboard() {
         if (!cancelled) setStaffOnline(Array.isArray(staff) ? staff.slice(0, 8) : []);
       } catch (err) {
         if (!cancelled) {
-          setError(err?.message || "Failed to load dashboard");
+          setError(err?.message || "Failed to fetch tasks");
+          setInProgressCount(0);
+          setPendingCount(0);
           setStaffOnline([]);
         }
       } finally {
@@ -54,32 +55,31 @@ export default function SupervisorDashboard() {
   }, []);
 
   return (
-    <div className="mobile-end-user-screen manager-screen supervisor-screen">
-      <header className="manager-header">
-        <div className="manager-greeting-block">
-          <div className="manager-avatar-wrap">
-            <img src={logoIcon} alt="" className="manager-avatar" style={{ objectFit: "cover" }} />
-          </div>
-          <div className="manager-greeting-text">
-            <h1 className="manager-greeting">
-              {getGreeting()}, {getUserDisplayName(user, "Alex")}
-            </h1>
-            <p className="manager-location">📍 Madhuban Group</p>
-          </div>
-          <button
-            type="button"
-            className="manager-notify"
-            aria-label="Notifications"
-            onClick={() => navigate("/mobile/supervisor/notifications")}
-          >
-            🔔
-            {unreadCount > 0 && (
-              <span className="manager-notify-badge" aria-label={`${unreadCount} unread`}>
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
-            )}
-          </button>
+    <div className="supervisor-dashboard-page">
+      <p className="supervisor-screen-title">Supervisor Dashboard</p>
+      <header className="supervisor-dashboard-header">
+        <div className="manager-avatar-wrap">
+          <img src={logoIcon} alt="" className="manager-avatar" style={{ objectFit: "cover" }} />
         </div>
+        <div className="manager-greeting-text">
+          <h1 className="manager-greeting">
+            {getGreeting()}, {getUserDisplayName(user, "Alex")}
+          </h1>
+          <p className="manager-location">📍 Madhuban Group</p>
+        </div>
+        <button
+          type="button"
+          className="manager-notify"
+          aria-label="Notifications"
+          onClick={() => navigate("/mobile/supervisor/notifications")}
+        >
+          🔔
+          {unreadCount > 0 && (
+            <span className="manager-notify-badge" aria-label={`${unreadCount} unread`}>
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </button>
       </header>
 
       {loading && (
@@ -90,14 +90,13 @@ export default function SupervisorDashboard() {
 
       {error && !loading && (
         <section className="manager-section">
-          <p className="manager-error">{error}</p>
+          <p className="manager-error manager-error-banner">{error} Showing offline view.</p>
         </section>
       )}
 
-      {!loading && !error && (
+      {!loading && (
         <>
-          <section className="manager-section">
-            <h2 className="supervisor-dashboard-title">Supervisor Dashboard</h2>
+          <section className="manager-section supervisor-summary-section">
             <div className="manager-task-grid supervisor-summary-cards">
               <button
                 type="button"
@@ -152,8 +151,6 @@ export default function SupervisorDashboard() {
           </section>
         </>
       )}
-
-      <SupervisorBottomNav />
     </div>
   );
 }

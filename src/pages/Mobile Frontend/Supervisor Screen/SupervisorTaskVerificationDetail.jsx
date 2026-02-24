@@ -4,7 +4,6 @@
  */
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import SupervisorBottomNav from "./SupervisorBottomNav";
 import { getSupervisorTaskById, approveTask, rejectTask } from "./supervisorService";
 
 export default function SupervisorTaskVerificationDetail() {
@@ -131,7 +130,6 @@ export default function SupervisorTaskVerificationDetail() {
         </>
       )}
 
-      <SupervisorBottomNav />
     </div>
   );
 }

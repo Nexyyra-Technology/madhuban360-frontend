@@ -4,7 +4,6 @@
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import SupervisorBottomNav from "./SupervisorBottomNav";
 import LogoutConfirmDialog from "../manager Screen/LogoutConfirmDialog";
 import { useAuth } from "../../../context/AuthContext";
 import { getSupervisorProfile } from "./supervisorService";
@@ -109,7 +108,6 @@ export default function SupervisorProfile() {
         onLogout={handleLogout}
       />
 
-      <SupervisorBottomNav />
     </div>
   );
 }

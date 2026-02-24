@@ -90,6 +90,7 @@ export default function NotificationsScreen() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const BottomNav = isSupervisor ? SupervisorBottomNav : isManager ? ManagerBottomNav : MobileBottomNav;
+  const showBottomNav = !location.pathname.startsWith("/mobile/supervisor/");
 
   return (
     <div className={`mobile-end-user-screen ${isManager || isSupervisor ? "manager-screen" : ""}`}>
@@ -151,7 +152,7 @@ export default function NotificationsScreen() {
         )}
       </div>
 
-      <BottomNav />
+      {showBottomNav && <BottomNav />}
     </div>
   );
 }

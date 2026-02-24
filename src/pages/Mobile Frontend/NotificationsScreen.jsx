@@ -32,7 +32,6 @@ function formatRelativeTime(iso) {
   const diffMs = now - d;
   const diffM = Math.floor(diffMs / 60000);
   const diffH = Math.floor(diffMs / 3600000);
-  const diffD = Math.floor(diffMs / 86400000);
 
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const notifDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -72,23 +71,27 @@ export default function NotificationsScreen() {
   const backPath = isSupervisor ? "/mobile/supervisor/dashboard" : isManager ? "/mobile/manager/dashboard" : "/mobile/dashboard";
 
   const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [didFetch, setDidFetch] = useState(false);
   const [filter, setFilter] = useState("all"); // "all" | "unread"
+  const shouldFetchNotifications = !isSupervisor;
+  const loading = shouldFetchNotifications && !didFetch;
 
   useEffect(() => {
+    if (!shouldFetchNotifications) {
+      return;
+    }
+
     getNotifications(isManager)
       .then(({ list }) => setNotifications(Array.isArray(list) ? list : []))
       .catch(() => setNotifications([]))
-      .finally(() => setLoading(false));
-  }, [isManager, isSupervisor]);
+      .finally(() => setDidFetch(true));
+  }, [isManager, shouldFetchNotifications]);
 
   const filtered = filter === "unread"
     ? notifications.filter((n) => !n.read)
     : notifications;
 
   const { today, earlier } = groupByDate(filtered);
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
   const BottomNav = isSupervisor ? SupervisorBottomNav : isManager ? ManagerBottomNav : MobileBottomNav;
   const showBottomNav = !location.pathname.startsWith("/mobile/supervisor/");
 
@@ -158,7 +161,7 @@ export default function NotificationsScreen() {
 }
 
 function NotificationItem({ notification, config, isManager, isSupervisor, onNavigate }) {
-  const { id, title, description, createdAt, read, entityType, entityId } = notification;
+  const { title, description, createdAt, read, entityType, entityId } = notification;
   const style = {
     backgroundColor: config.bg,
     color: config.color,

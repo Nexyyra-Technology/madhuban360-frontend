@@ -11,11 +11,8 @@ import {
   getManagerTasks,
   getManagerSupervisors,
   computeDashboardFromTasks,
-  approveTask as apiApproveTask,
-  rejectTask as apiRejectTask,
   getManagerProfile,
 } from "../manager Screen/managerService";
-import { getTaskById, updateTaskStatus } from "../../TaskTab/taskService";
 
 export { getManagerProfile as getSupervisorProfile };
 
@@ -118,6 +115,45 @@ export async function getSupervisorPendingTasks() {
   return json.data.map(normalizePendingTask);
 }
 
+function normalizeAllTask(t) {
+  const rawStatus = (t?.status || "").toUpperCase().replace(/\s/g, "_");
+  return {
+    id: t?.id ?? t?._id,
+    title: t?.taskName ?? t?.title ?? "Untitled Task",
+    propertyName: t?.propertyName ?? t?.property ?? null,
+    location:
+      t?.locationFloor ??
+      t?.roomNumber ??
+      t?.propertyName ??
+      t?.location ??
+      "—",
+    supervisor: t?.assigneeName ?? t?.supervisor ?? "—",
+    priority: t?.priority ?? null,
+    status: rawStatus,
+    frequency: t?.frequency ?? null,
+    startTime: t?.startTime ?? null,
+    endTime: t?.endTime ?? null,
+    estimatedMinutes: toMinutes(t?.timeDuration) ?? 10,
+    dueDate: t?.dueDate ?? null,
+    raw: t,
+  };
+}
+
+/** GET /api/supervisor/tasks/all – all tasks for supervisor (for Task Management screen) */
+export async function getSupervisorAllTasks() {
+  const url = `${API_BASE_URL}/api/supervisor/tasks/all`.replace(/([^:]\/)\/+/g, "$1");
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = json?.message ?? json?.error ?? `Request failed (${res.status})`;
+    throw new Error(msg);
+  }
+  if (!json?.success || !Array.isArray(json?.data)) {
+    throw new Error("Invalid tasks response");
+  }
+  return json.data.map(normalizeAllTask);
+}
+
 /** Fetch tasks for supervisor dashboard (In Progress + Pending counts, lists) */
 export async function getSupervisorTasks(filters = {}) {
   return getManagerTasks(filters);
@@ -146,24 +182,51 @@ export function getSupervisorDashboardStats(tasks) {
   };
 }
 
-/** Single task details for View Details popup */
+/** Single task details for View Details modal – GET /api/supervisor/tasks/:id */
 export async function getSupervisorTaskById(id) {
-  return getTaskById(id);
+  const url = `${API_BASE_URL}/api/supervisor/tasks/${id}`.replace(/([^:]\/)\/+/g, "$1");
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = json?.message ?? json?.error ?? `Request failed (${res.status})`;
+    throw new Error(msg);
+  }
+  if (!json?.success || json?.data == null) {
+    throw new Error("Invalid task details response");
+  }
+  return json.data;
 }
 
 /** Approve task (verification) */
 export async function approveTask(taskId) {
-  return apiApproveTask(taskId);
+  const url = `${API_BASE_URL}/api/tasks/${taskId}/approve`.replace(/([^:]\/)\/+/g, "$1");
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: getAuthHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ approved: true }),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = json?.message ?? json?.error ?? `Request failed (${res.status})`;
+    throw new Error(msg);
+  }
+  return json;
 }
 
 /** Reject task (verification) */
-export async function rejectTask(taskId, comment) {
-  try {
-    return await apiRejectTask(taskId);
-  } catch {
-    await updateTaskStatus(taskId, "IN_PROGRESS");
-    return { success: true };
+export async function rejectTask(taskId) {
+  const url = `${API_BASE_URL}/api/tasks/${taskId}/approve`.replace(/([^:]\/)\/+/g, "$1");
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: getAuthHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ approved: false }),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = json?.message ?? json?.error ?? `Request failed (${res.status})`;
+    throw new Error(msg);
   }
+  return json;
 }
 
 /** Mock/placeholder: attendance & leave data (replace with real API when available) */

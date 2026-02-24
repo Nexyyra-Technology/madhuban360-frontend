@@ -2981,6 +2981,47 @@ body {
 .supervisor-calendar-day .low { color: var(--accent-red); }
 .supervisor-calendar-day .ok { color: var(--accent-green); }
 .supervisor-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+/* Attendance calendar: keep full 7-column grid inside viewport on mobile */
+.supervisor-calendar-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  overflow-x: hidden;
+}
+.supervisor-calendar-nav {
+  padding: 0;
+  gap: 8px;
+}
+.supervisor-calendar-month {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+.supervisor-calendar-dow,
+.supervisor-calendar-grid {
+  width: 100%;
+}
+.supervisor-calendar-dow > span,
+.supervisor-calendar-day {
+  min-width: 0;
+  box-sizing: border-box;
+}
+.supervisor-calendar-day {
+  padding: 6px 4px;
+}
+.supervisor-calendar-day > span {
+  display: block;
+  line-height: 1.2;
+}
+.supervisor-calendar-day > span:first-child {
+  font-size: 13px;
+  font-weight: 600;
+}
+.supervisor-calendar-day > span:last-child {
+  font-size: 11px;
+}
 .supervisor-stat-box { padding: 16px; border-radius: var(--radius-md); background: #f0f9ff; text-align: center; }
 .supervisor-stat-box.green { background: #f0fdf4; }
 .supervisor-stat-box.green .supervisor-stat-label { color: var(--accent-green); }

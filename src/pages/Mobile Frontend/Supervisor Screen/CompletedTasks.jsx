@@ -67,7 +67,7 @@ export default function CompletedTasks() {
   });
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, background: "#f5f2ee" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, background: "#f0f0f0" }}>
       {/* Header */}
       <header
         style={{

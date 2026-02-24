@@ -6,8 +6,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, MapPin, ClipboardList, Clock, Search, ChevronRight } from "lucide-react";
 import { getSupervisorDashboard } from "./supervisorService";
-import { getNotifications } from "../notificationService";
-import { getGreeting } from "../../../lib/userUtils";
+import { getGreeting, getStoredUser, isSupervisorRole } from "../../../lib/userUtils";
 import logoIcon from "../../../assets/logo-icon.png";
 
 const defaultDashboard = {
@@ -15,6 +14,17 @@ const defaultDashboard = {
   summary: { completed: 0, pending: 0 },
   staffOnline: { onlineTeamMembersCount: 0, teamMembers: [] },
 };
+
+let dashboardInFlightPromise = null;
+
+function getSupervisorDashboardDeduped() {
+  if (!dashboardInFlightPromise) {
+    dashboardInFlightPromise = getSupervisorDashboard().finally(() => {
+      dashboardInFlightPromise = null;
+    });
+  }
+  return dashboardInFlightPromise;
+}
 
 export default function SupervisorDashboard() {
   const navigate = useNavigate();
@@ -24,20 +34,23 @@ export default function SupervisorDashboard() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const isSupervisor = isSupervisorRole(getStoredUser());
 
   useEffect(() => {
-    getNotifications(true)
-      .then(({ unreadCount: c }) => setUnreadCount(c ?? 0))
-      .catch(() => setUnreadCount(0));
-  }, []);
+    if (!isSupervisor) {
+      setLoading(false);
+      setError(null);
+      setData(defaultDashboard);
+      setUnreadCount(0);
+      return;
+    }
 
-  useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
       setError(null);
       try {
-        const dashboard = await getSupervisorDashboard();
+        const dashboard = await getSupervisorDashboardDeduped();
         if (!cancelled) setData(dashboard);
       } catch (err) {
         if (!cancelled) {
@@ -50,7 +63,7 @@ export default function SupervisorDashboard() {
     }
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [isSupervisor]);
 
   const { supervisor, summary, staffOnline } = data;
   const completed = summary?.completed ?? 0;
@@ -67,7 +80,7 @@ export default function SupervisorDashboard() {
   const isOnline = (member) => (member.status || "").toLowerCase() === "online";
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, background: "#f5f2ee" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, background: "#f0f0f0" }}>
       <div style={{ flex: 1, overflowY: "auto", padding: "18px 22px 20px" }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
@@ -349,7 +362,7 @@ export default function SupervisorDashboard() {
                         width: 32,
                         height: 32,
                         borderRadius: "50%",
-                        background: "#f5f2ee",
+                        background: "#f0f0f0",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",

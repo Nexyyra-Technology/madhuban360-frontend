@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import MobileBottomNav from "./End user screen/MobileBottomNav";
 import ManagerBottomNav from "./manager Screen/ManagerBottomNav";
+import SupervisorBottomNav from "./Supervisor Screen/SupervisorBottomNav";
 import { getNotifications } from "./notificationService";
 
 const NOTIFICATION_ICONS = {
@@ -66,8 +67,9 @@ function groupByDate(notifications) {
 export default function NotificationsScreen() {
   const navigate = useNavigate();
   const location = useLocation();
+  const isSupervisor = location.pathname.startsWith("/mobile/supervisor/");
   const isManager = location.pathname.startsWith("/mobile/manager/");
-  const backPath = isManager ? "/mobile/manager/dashboard" : "/mobile/dashboard";
+  const backPath = isSupervisor ? "/mobile/supervisor/dashboard" : isManager ? "/mobile/manager/dashboard" : "/mobile/dashboard";
 
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +80,7 @@ export default function NotificationsScreen() {
       .then(({ list }) => setNotifications(Array.isArray(list) ? list : []))
       .catch(() => setNotifications([]))
       .finally(() => setLoading(false));
-  }, [isManager]);
+  }, [isManager, isSupervisor]);
 
   const filtered = filter === "unread"
     ? notifications.filter((n) => !n.read)
@@ -87,10 +89,10 @@ export default function NotificationsScreen() {
   const { today, earlier } = groupByDate(filtered);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const BottomNav = isManager ? ManagerBottomNav : MobileBottomNav;
+  const BottomNav = isSupervisor ? SupervisorBottomNav : isManager ? ManagerBottomNav : MobileBottomNav;
 
   return (
-    <div className={`mobile-end-user-screen ${isManager ? "manager-screen" : ""}`}>
+    <div className={`mobile-end-user-screen ${isManager || isSupervisor ? "manager-screen" : ""}`}>
       <header className="notifications-header">
         <button type="button" className="notifications-back" onClick={() => navigate(backPath)} aria-label="Back">
           ←
@@ -131,7 +133,7 @@ export default function NotificationsScreen() {
                   <span className="notifications-group-badge">{today.length} Active</span>
                 </div>
                 {today.map((n) => (
-                  <NotificationItem key={n.id} notification={n} config={getIconConfig(n.type)} isManager={isManager} onNavigate={navigate} />
+                  <NotificationItem key={n.id} notification={n} config={getIconConfig(n.type)} isManager={isManager} isSupervisor={isSupervisor} onNavigate={navigate} />
                 ))}
               </section>
             )}
@@ -141,7 +143,7 @@ export default function NotificationsScreen() {
                   <h3>Earlier</h3>
                 </div>
                 {earlier.map((n) => (
-                  <NotificationItem key={n.id} notification={n} config={getIconConfig(n.type)} isManager={isManager} onNavigate={navigate} />
+                  <NotificationItem key={n.id} notification={n} config={getIconConfig(n.type)} isManager={isManager} isSupervisor={isSupervisor} onNavigate={navigate} />
                 ))}
               </section>
             )}
@@ -154,7 +156,7 @@ export default function NotificationsScreen() {
   );
 }
 
-function NotificationItem({ notification, config, isManager, onNavigate }) {
+function NotificationItem({ notification, config, isManager, isSupervisor, onNavigate }) {
   const { id, title, description, createdAt, read, entityType, entityId } = notification;
   const style = {
     backgroundColor: config.bg,
@@ -163,19 +165,20 @@ function NotificationItem({ notification, config, isManager, onNavigate }) {
   };
 
   const isTaskNotification = entityType === "task" || ["task_completed", "task_assigned"].includes(notification.type || "");
+  const canNavigate = (isManager || isSupervisor) && isTaskNotification && entityId;
   const handleClick = () => {
-    if (isManager && isTaskNotification && entityId) {
-      onNavigate("/mobile/manager/tasks");
+    if (canNavigate) {
+      onNavigate(isSupervisor ? "/mobile/supervisor/tasks" : "/mobile/manager/tasks");
     }
   };
 
   return (
     <div
-      className={`notification-item ${read ? "read" : ""} ${isTaskNotification && isManager ? "notification-item-clickable" : ""}`}
-      role={isTaskNotification && isManager ? "button" : undefined}
-      tabIndex={isTaskNotification && isManager ? 0 : undefined}
+      className={`notification-item ${read ? "read" : ""} ${canNavigate ? "notification-item-clickable" : ""}`}
+      role={canNavigate ? "button" : undefined}
+      tabIndex={canNavigate ? 0 : undefined}
       onClick={handleClick}
-      onKeyDown={(e) => isTaskNotification && isManager && (e.key === "Enter" || e.key === " ") && handleClick()}
+      onKeyDown={(e) => canNavigate && (e.key === "Enter" || e.key === " ") && handleClick()}
     >
       <div className="notification-icon" style={style}>
         {config.icon}

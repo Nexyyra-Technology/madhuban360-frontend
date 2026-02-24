@@ -41,9 +41,6 @@ export default function StaffList() {
     return () => { cancelled = true; };
   }, [search, tab]);
 
-  const tabKey = tab === "All Staff" ? "All" : tab;
-  const count = tabKey === "All" ? data.total : tabKey === "Present" ? data.present : data.absent;
-
   return (
     <div className="mobile-end-user-screen manager-screen supervisor-screen">
       <header className="supervisor-page-header">

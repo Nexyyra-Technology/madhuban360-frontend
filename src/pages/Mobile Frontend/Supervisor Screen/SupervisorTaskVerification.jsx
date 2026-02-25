@@ -26,7 +26,7 @@ export default function SupervisorTaskVerification() {
       const list = await getSupervisorTasks({});
       const review = (list || []).filter((t) => {
         const s = (t.rawStatus || t.status || "").toUpperCase().replace(/\s/g, "_");
-        return ["REVIEW", "PENDING_APPROVAL"].includes(s);
+        return ["REVIEW", "PENDING_APPROVAL", "COMPLETED", "DONE", "APPROVED", "SUBMITTED", "FOR_VERIFICATION"].includes(s);
       });
       setTasks(review);
     } catch {
@@ -34,6 +34,11 @@ export default function SupervisorTaskVerification() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const isTaskCompleted = (t) => {
+    const s = (t.rawStatus || t.status || "").toUpperCase().replace(/\s/g, "_");
+    return ["COMPLETED", "DONE", "APPROVED"].includes(s);
   };
 
   useEffect(() => {
@@ -100,55 +105,66 @@ export default function SupervisorTaskVerification() {
             {tasks.length === 0 ? (
               <p className="manager-empty">No tasks pending verification.</p>
             ) : (
-              tasks.map((t) => (
-                <div key={t.id ?? t._id} className="supervisor-verify-card">
-                  <div className="supervisor-verify-head">
-                    <h3 className="supervisor-verify-title">{t.title}</h3>
-                    <span className="supervisor-pill urgent">URGENT</span>
-                  </div>
-                  <p className="supervisor-verify-completed">Completed By: {t.supervisor}</p>
-                  <div className="supervisor-verify-meta">
-                    <div>
-                      <span className="supervisor-meta-label">DURATION TAKEN</span>
-                      <p>🕐 9 Min</p>
+              tasks.map((t) => {
+                const completed = isTaskCompleted(t);
+                return (
+                  <div key={t.id ?? t._id} className="supervisor-verify-card">
+                    <div className="supervisor-verify-head">
+                      <h3 className="supervisor-verify-title">{t.title}</h3>
+                      {completed ? (
+                        <span className="supervisor-pill approved">Approved</span>
+                      ) : (
+                        <span className="supervisor-pill urgent">URGENT</span>
+                      )}
                     </div>
-                    <div>
-                      <span className="supervisor-meta-label">LOCATION</span>
-                      <p>📍 {t.location}</p>
+                    <p className="supervisor-verify-completed">Completed By: {t.supervisor}</p>
+                    <div className="supervisor-verify-meta">
+                      <div>
+                        <span className="supervisor-meta-label">DURATION TAKEN</span>
+                        <p>9 Min</p>
+                      </div>
+                      <div>
+                        <span className="supervisor-meta-label">LOCATION</span>
+                        <p>{t.location}</p>
+                      </div>
+                    </div>
+                    <div className="supervisor-verify-time-row">
+                      <span>START TIME: {formatTime(t.updatedAt)}</span>
+                      <span>END TIME: {formatTime(t.completedAt)}</span>
+                      <span>DURATION: 10:00 Min</span>
+                    </div>
+                    <div className="supervisor-verify-actions">
+                      <button
+                        type="button"
+                        className="supervisor-link-btn"
+                        onClick={() => navigate(`/mobile/supervisor/task-verification/${t.id ?? t._id}`)}
+                      >
+                        VIEW DETAILS
+                      </button>
+                      {!completed && (
+                        <>
+                          <button
+                            type="button"
+                            className="supervisor-btn-reject"
+                            onClick={() => handleReject(t.id ?? t._id)}
+                            disabled={rejectingId === (t.id ?? t._id)}
+                          >
+                            Reject
+                          </button>
+                          <button
+                            type="button"
+                            className="supervisor-btn-approve"
+                            onClick={() => handleApprove(t.id ?? t._id)}
+                            disabled={approvingId === (t.id ?? t._id)}
+                          >
+                            {approvingId === (t.id ?? t._id) ? "Approving…" : "Approve"}
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
-                  <div className="supervisor-verify-time-row">
-                    <span>START TIME: {formatTime(t.updatedAt)}</span>
-                    <span>END TIME: {formatTime(t.completedAt)}</span>
-                    <span>DURATION: 10:00 Min</span>
-                  </div>
-                  <div className="supervisor-verify-actions">
-                    <button
-                      type="button"
-                      className="supervisor-link-btn"
-                      onClick={() => navigate(`/mobile/supervisor/task-verification/${t.id ?? t._id}`)}
-                    >
-                      VIEW DETAILS
-                    </button>
-                    <button
-                      type="button"
-                      className="supervisor-btn-reject"
-                      onClick={() => handleReject(t.id ?? t._id)}
-                      disabled={rejectingId === (t.id ?? t._id)}
-                    >
-                      Reject
-                    </button>
-                    <button
-                      type="button"
-                      className="supervisor-btn-approve"
-                      onClick={() => handleApprove(t.id ?? t._id)}
-                      disabled={approvingId === (t.id ?? t._id)}
-                    >
-                      {approvingId === (t.id ?? t._id) ? "Approving…" : "Approve"}
-                    </button>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </section>

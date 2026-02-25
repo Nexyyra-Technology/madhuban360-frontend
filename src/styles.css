@@ -2879,6 +2879,7 @@ body {
 .supervisor-pill.overdue { background: #fee2e2; color: #b91c1c; }
 .supervisor-pill.pending-approval { background: #e0e7ff; color: #4338ca; }
 .supervisor-pill.leave-type { background: var(--border-light); color: var(--text-secondary); }
+.supervisor-pill.approved { background: #DCFCE7; color: #15803D; }
 .supervisor-inprogress-location, .supervisor-pending-location { font-size: 14px; color: var(--text-secondary); margin: 0 0 12px 0; }
 .supervisor-inprogress-meta, .supervisor-verify-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 .supervisor-meta-label { display: block; font-size: 10px; color: var(--text-muted); margin-bottom: 2px; text-transform: uppercase; }
@@ -2958,7 +2959,19 @@ body {
 .supervisor-verify-detail-title { font-size: 18px; font-weight: 700; margin: 0 0 8px 0; }
 .supervisor-evidence-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .supervisor-evidence-item { }
-.supervisor-evidence-img { height: 120px; border-radius: var(--radius-md); background: var(--border); }
+.supervisor-evidence-img {
+  width: 100%;
+  height: 120px;
+  border-radius: var(--radius-md);
+  background: var(--border);
+  overflow: hidden;
+}
+.supervisor-evidence-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 .supervisor-evidence-img.before { filter: grayscale(1); }
 .supervisor-evidence-label { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; margin-top: 4px; }
 .supervisor-evidence-label.before { background: #fecaca; color: #b91c1c; }

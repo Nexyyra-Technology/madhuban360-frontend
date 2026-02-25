@@ -9,7 +9,7 @@
  */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MdArrowBack, MdPhoneIphone, MdLock } from "react-icons/md";
+import { MdArrowBack, MdPhoneIphone, MdLock, MdVisibility, MdVisibilityOff } from "react-icons/md";
 import { mobileLogin, requestOtp, normalizeMobile } from "./mobileAuthService";
 import { useAuth } from "../../../context/AuthContext";
 import { isManagerRole, isSupervisorRole } from "../../../lib/userUtils";
@@ -19,6 +19,7 @@ import logoText from "../../../assets/logo-text.png";
 export default function LoginScreen() {
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -91,7 +92,7 @@ export default function LoginScreen() {
             </div>
           ) : null}
           <div className="mobile-field">
-            <label className="mobile-label">Mobile Number</label>
+            <label className="mobile-label">Mobile no. or Email</label>
             <div className="mobile-input-wrap">
               <MdPhoneIphone className="mobile-input-icon" aria-hidden />
               <input
@@ -104,7 +105,7 @@ export default function LoginScreen() {
                   setMobile(looksLikeEmail ? v : v.replace(/\D/g, "").slice(0, 10));
                 }}
                 className="mobile-input"
-                placeholder="Enter 10 digit mobile no"
+                placeholder="Enter mobile no. or email"
                 required
                 autoComplete="username"
               />
@@ -115,13 +116,27 @@ export default function LoginScreen() {
             <div className="mobile-input-wrap">
               <MdLock className="mobile-input-icon" aria-hidden />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mobile-input"
                 placeholder="Enter password"
                 required
+                autoComplete="current-password"
               />
+              <button
+                type="button"
+                className="mobile-pwd-toggle"
+                onClick={() => setShowPassword((s) => !s)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                tabIndex={0}
+              >
+                {showPassword ? (
+                  <MdVisibilityOff className="mobile-input-icon" aria-hidden />
+                ) : (
+                  <MdVisibility className="mobile-input-icon" aria-hidden />
+                )}
+              </button>
             </div>
           </div>
           <div className="mobile-forgot-wrap">

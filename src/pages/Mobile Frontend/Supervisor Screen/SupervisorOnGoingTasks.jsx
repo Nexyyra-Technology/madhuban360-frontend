@@ -88,6 +88,9 @@ export default function SupervisorOnGoingTasks() {
     return tasks.filter((t) => statuses.has(String(t.status || "").toUpperCase()));
   })();
 
+  const isTaskCompleted = (t) =>
+    ["COMPLETED", "DONE", "APPROVED"].includes(String(t.status || "").toUpperCase());
+
   const badgeStyle = (status) => {
     if (status === "OVERDUE") {
       return { bg: "#FEE2E2", color: "#B91C1C", label: "Overdue" };
@@ -397,6 +400,7 @@ export default function SupervisorOnGoingTasks() {
             {verificationTasks.map((t) => {
               const id = t.id;
               const isUrgent = ["HIGH", "URGENT"].includes(String(t.priority || "").toUpperCase());
+              const completed = isTaskCompleted(t);
               return (
                 <div
                   key={id}
@@ -419,20 +423,36 @@ export default function SupervisorOnGoingTasks() {
                       <h3 style={{ margin: 0, fontSize: 16, color: "#1f2937", lineHeight: 1.2 }}>
                         {t.title}
                       </h3>
-                      {isUrgent && (
-                        <span
-                          style={{
-                            padding: "4px 10px",
-                            borderRadius: 8,
-                            fontSize: 12,
-                            fontWeight: 700,
-                            color: "#EA580C",
-                            background: "#FFF7ED",
-                          }}
-                        >
-                          URGENT
-                        </span>
-                      )}
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                        {completed && (
+                          <span
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: 8,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: "#15803D",
+                              background: "#DCFCE7",
+                            }}
+                          >
+                            Approved
+                          </span>
+                        )}
+                        {isUrgent && !completed && (
+                          <span
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: 8,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: "#EA580C",
+                              background: "#FFF7ED",
+                            }}
+                          >
+                            URGENT
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div style={{ marginTop: 8, fontSize: 13, color: "#334155" }}>
@@ -489,13 +509,13 @@ export default function SupervisorOnGoingTasks() {
                       borderTop: "1px solid #E5E7EB",
                       padding: 12,
                       display: "grid",
-                      gridTemplateColumns: "1.3fr 1fr 1fr",
+                      gridTemplateColumns: completed ? "1fr" : "1.3fr 1fr 1fr",
                       gap: 10,
                     }}
                   >
                     <button
                       type="button"
-                      onClick={() => setDetailsTask(t)}
+                      onClick={() => navigate(`/mobile/supervisor/task-verification/${id}`)}
                       style={{
                         border: "none",
                         background: "transparent",
@@ -508,40 +528,44 @@ export default function SupervisorOnGoingTasks() {
                     >
                       VIEW DETAILS
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleReject(id)}
-                      disabled={rejectingId === id}
-                      style={{
-                        border: "none",
-                        borderRadius: 10,
-                        background: "#FEE2E2",
-                        color: "#DC2626",
-                        fontSize: 14,
-                        fontWeight: 700,
-                        height: 38,
-                        cursor: "pointer",
-                      }}
-                    >
-                      {rejectingId === id ? "..." : "Reject"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleApprove(id)}
-                      disabled={approvingId === id}
-                      style={{
-                        border: "none",
-                        borderRadius: 10,
-                        background: "#16A34A",
-                        color: "white",
-                        fontSize: 14,
-                        fontWeight: 700,
-                        height: 38,
-                        cursor: "pointer",
-                      }}
-                    >
-                      {approvingId === id ? "..." : "Approve"}
-                    </button>
+                    {!completed && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleReject(id)}
+                          disabled={rejectingId === id}
+                          style={{
+                            border: "none",
+                            borderRadius: 10,
+                            background: "#FEE2E2",
+                            color: "#DC2626",
+                            fontSize: 14,
+                            fontWeight: 700,
+                            height: 38,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {rejectingId === id ? "..." : "Reject"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleApprove(id)}
+                          disabled={approvingId === id}
+                          style={{
+                            border: "none",
+                            borderRadius: 10,
+                            background: "#16A34A",
+                            color: "white",
+                            fontSize: 14,
+                            fontWeight: 700,
+                            height: 38,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {approvingId === id ? "..." : "Approve"}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               );

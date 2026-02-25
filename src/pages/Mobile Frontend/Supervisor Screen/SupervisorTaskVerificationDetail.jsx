@@ -54,7 +54,7 @@ export default function SupervisorTaskVerificationDetail() {
     setActionLoading(true);
     try {
       await approveTask(id);
-      navigate("/mobile/supervisor/task-verification", { replace: true });
+      navigate("/mobile/supervisor/tasks", { replace: true });
     } catch (err) {
       console.error(err);
     } finally {
@@ -67,7 +67,7 @@ export default function SupervisorTaskVerificationDetail() {
     setActionLoading(true);
     try {
       await rejectTask(id, comments);
-      navigate("/mobile/supervisor/task-verification", { replace: true });
+      navigate("/mobile/supervisor/tasks", { replace: true });
     } catch (err) {
       console.error(err);
     } finally {
@@ -108,7 +108,7 @@ export default function SupervisorTaskVerificationDetail() {
     <div className="mobile-end-user-screen manager-screen supervisor-screen">
       <header className="supervisor-page-header">
         <div className="supervisor-header-bar">
-          <button type="button" className="supervisor-back-btn" onClick={() => navigate("/mobile/supervisor/task-verification")} aria-label="Back">
+          <button type="button" className="supervisor-back-btn" onClick={() => navigate("/mobile/supervisor/tasks")} aria-label="Back">
             ←
           </button>
           <h1 className="supervisor-page-title">Task Verification</h1>

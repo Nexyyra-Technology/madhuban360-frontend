@@ -83,12 +83,23 @@ export default function SupervisorTaskVerificationDetail() {
 
   const completed = task ? isTaskCompleted(task) : false;
 
-  // For now use static web images instead of API attachment images
-  const photosCount = 2;
-  const beforeUrl =
-    "https://images.pexels.com/photos/3965520/pexels-photo-3965520.jpeg?auto=compress&cs=tinysrgb&w=800";
-  const afterUrl =
-    "https://images.pexels.com/photos/4108719/pexels-photo-4108719.jpeg?auto=compress&cs=tinysrgb&w=800";
+  const attachments = Array.isArray(task?.attachments) ? task.attachments : [];
+  const beforeAttachmentExplicit = attachments.find(
+    (a) => String(a.attachmentType || "").toLowerCase() === "before",
+  );
+  const afterAttachmentExplicit = attachments.find(
+    (a) => String(a.attachmentType || "").toLowerCase() === "after",
+  );
+  const beforeAttachment = beforeAttachmentExplicit || attachments[0] || null;
+  const afterAttachment =
+    afterAttachmentExplicit ||
+    attachments.find((a) => a !== beforeAttachment) ||
+    null;
+
+  const beforeUrl = beforeAttachment?.url;
+  const afterUrl = afterAttachment?.url;
+
+  const photosCount = attachments.length;
 
   const locationLine =
     task?.locationFloor ||
@@ -148,7 +159,9 @@ export default function SupervisorTaskVerificationDetail() {
                     <img src={beforeUrl} alt="Before task evidence" />
                   </div>
                   <span className="supervisor-evidence-label before">Before</span>
-                  <p className="supervisor-evidence-time">Today, 1:00 PM</p>
+                  <p className="supervisor-evidence-time">
+                    {formatAttachmentTime(beforeAttachment?.createdAt ?? beforeAttachment?.updatedAt)}
+                  </p>
                 </div>
               )}
               {afterUrl && (
@@ -157,7 +170,9 @@ export default function SupervisorTaskVerificationDetail() {
                     <img src={afterUrl} alt="After task evidence" />
                   </div>
                   <span className="supervisor-evidence-label after">After</span>
-                  <p className="supervisor-evidence-time">Today, 1:00 PM</p>
+                  <p className="supervisor-evidence-time">
+                    {formatAttachmentTime(afterAttachment?.createdAt ?? afterAttachment?.updatedAt)}
+                  </p>
                 </div>
               )}
             </div>

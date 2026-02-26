@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { Wrench, FolderOpen, BarChart3, Settings, Building, Search, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import WorkorderTab from "./WorkorderTab";
 import AssetTrackingTab from "./AssetTrackingTab";
 import ReportsTab from "./ReportsTab";
@@ -141,31 +142,31 @@ export default function PropertyManagement() {
         <TabButton
           active={activeTab === TAB_KEYS.workOrders}
           onClick={() => setActiveTab(TAB_KEYS.workOrders)}
-          icon={<span className="text-lg" aria-hidden>🔧</span>}
+          icon={<Wrench className="w-5 h-5" aria-hidden />}
           label="Work Orders"
         />
         <TabButton
           active={activeTab === TAB_KEYS.assetTracking}
           onClick={() => setActiveTab(TAB_KEYS.assetTracking)}
-          icon={<span className="text-lg" aria-hidden>📁</span>}
+          icon={<FolderOpen className="w-5 h-5" aria-hidden />}
           label="Asset Tracking"
         />
         <TabButton
           active={activeTab === TAB_KEYS.reports}
           onClick={() => setActiveTab(TAB_KEYS.reports)}
-          icon={<span className="text-lg" aria-hidden>📊</span>}
+          icon={<BarChart3 className="w-5 h-5" aria-hidden />}
           label="Reports"
         />
         <TabButton
           active={activeTab === TAB_KEYS.settings}
           onClick={() => setActiveTab(TAB_KEYS.settings)}
-          icon={<span className="text-lg" aria-hidden>⚙</span>}
+          icon={<Settings className="w-5 h-5" aria-hidden />}
           label="Settings"
         />
         <TabButton
           active={activeTab === TAB_KEYS.properties}
           onClick={() => setActiveTab(TAB_KEYS.properties)}
-          icon={<span className="text-lg" aria-hidden>🏢</span>}
+          icon={<Building className="w-5 h-5" aria-hidden />}
           label="Properties"
         />
       </div>
@@ -191,7 +192,7 @@ export default function PropertyManagement() {
             <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
               <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Expiring AMC</h4>
               <p className="text-2xl font-bold text-[#0d121b] mt-1">{loading ? "—" : s.expiringAmc}</p>
-              <p className="text-sm text-amber-600 mt-1 flex items-center gap-1">Renewal due in 30 days ⚠</p>
+              <p className="text-sm text-amber-600 mt-1 flex items-center gap-1">Renewal due in 30 days <AlertTriangle className="w-4 h-4 inline" /></p>
             </div>
             <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
               <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Occupancy</h4>
@@ -205,7 +206,7 @@ export default function PropertyManagement() {
           {/* Search & filters */}
           <div className="flex flex-wrap gap-3 mb-6">
             <div className="flex-1 min-w-[200px] relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search by name, location or ID..."
@@ -271,20 +272,7 @@ export default function PropertyManagement() {
                     <div className="p-5">
                       <h3 className="text-lg font-bold text-[#0d121b]">{p.name}</h3>
                       <p className="text-xs text-[#4c669a] mb-3">{p.location}</p>
-                      <div className="grid grid-cols-3 gap-2 text-xs mb-3">
-                        <div>
-                          <p className="text-gray-500">TOTAL UNITS</p>
-                          <p className="font-semibold text-[#0d121b]">{p.totalUnits} Units</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">UNITS SOLD</p>
-                          <p className="font-semibold text-[#0d121b]">{p.unitsSold} Units</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">UNITS UNSOLD</p>
-                          <p className="font-semibold text-[#0d121b]">{p.unitsUnsold} Units</p>
-                        </div>
-                      </div>
+
                       <p className={`text-xs font-semibold ${p.amcColor || "text-green-600"}`}>• {p.amcStatus || "ACTIVE"}</p>
                       <button type="button" className="mt-3 text-sm font-semibold text-[#1f2937] hover:underline">
                         {p.isExpired ? "Renew Now →" : "View Details →"}
@@ -311,13 +299,13 @@ export default function PropertyManagement() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <p className="text-sm text-gray-600">Showing 1 to {Math.min(5, properties.length)} of {displayTotal} properties</p>
             <div className="flex items-center gap-1">
-              <button type="button" className="p-2 rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50" disabled={page <= 1}>←</button>
+              <button type="button" className="p-2 rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50" disabled={page <= 1}><ChevronLeft className="w-4 h-4" /></button>
               {[1, 2, 3].map((n) => (
                 <button key={n} type="button" onClick={() => setPage(n)} className={`min-w-[36px] py-2 rounded-lg border text-sm font-medium ${page === n ? "bg-[#1f2937] text-white border-[#1f2937]" : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"}`}>{n}</button>
               ))}
               <span className="px-2 text-gray-500">…</span>
               <button type="button" className="min-w-[36px] py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50">9</button>
-              <button type="button" className="p-2 rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50">→</button>
+              <button type="button" className="p-2 rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"><ChevronRight className="w-4 h-4" /></button>
             </div>
           </div>
         </>

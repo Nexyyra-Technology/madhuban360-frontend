@@ -178,11 +178,11 @@ export async function getReportsAnalytics(params = {}) {
 // -----------------------------------------------------------------------------
 
 const FALLBACK_PROPERTIES = [
-  { id: 1, name: "Grand Plaza Office Tower", location: "Downtown Financial District, NY", category: "COMMERCIAL", image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab", totalUnits: 245, unitsSold: 240, unitsUnsold: 5, amcStatus: "ACTIVE", amcColor: "text-green-600" },
-  { id: 2, name: "Blue Water Residences", location: "Bayfront Avenue, Miami", category: "RESIDENTIAL", image: "https://images.unsplash.com/photo-1560185127-6ed189bf02f4", totalUnits: 120, unitsSold: 118, unitsUnsold: 2, amcStatus: "ACTIVE", amcColor: "text-green-600" },
-  { id: 3, name: "Metro Logistics Hub", location: "Industrial Park, Chicago", category: "INDUSTRIAL", image: "https://images.unsplash.com/photo-1567401898914-159092af3f38", totalUnits: 48, unitsSold: 48, unitsUnsold: 0, amcStatus: "EXPIRED", amcColor: "text-red-600", isExpired: true },
-  { id: 4, name: "Riverside Retail Complex", location: "Riverside Drive, LA", category: "COMMERCIAL", image: "https://images.unsplash.com/photo-1497366216548-37526070297c", totalUnits: 85, unitsSold: 80, unitsUnsold: 5, amcStatus: "EXPIRING SOON", amcColor: "text-amber-600" },
-  { id: 5, name: "Park View Apartments", location: "Central Park West, NY", category: "RESIDENTIAL", image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00", totalUnits: 200, unitsSold: 184, unitsUnsold: 16, amcStatus: "ACTIVE", amcColor: "text-green-600" },
+  { id: 1, name: "Grand Plaza Office Tower", location: "Downtown Financial District, NY", category: "COMMERCIAL", image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab", amcStatus: "ACTIVE", amcColor: "text-green-600" },
+  { id: 2, name: "Blue Water Residences", location: "Bayfront Avenue, Miami", category: "RESIDENTIAL", image: "https://images.unsplash.com/photo-1560185127-6ed189bf02f4", amcStatus: "ACTIVE", amcColor: "text-green-600" },
+  { id: 3, name: "Metro Logistics Hub", location: "Industrial Park, Chicago", category: "INDUSTRIAL", image: "https://images.unsplash.com/photo-1567401898914-159092af3f38", amcStatus: "EXPIRED", amcColor: "text-red-600", isExpired: true },
+  { id: 4, name: "Riverside Retail Complex", location: "Riverside Drive, LA", category: "COMMERCIAL", image: "https://images.unsplash.com/photo-1497366216548-37526070297c", amcStatus: "EXPIRING SOON", amcColor: "text-amber-600" },
+  { id: 5, name: "Park View Apartments", location: "Central Park West, NY", category: "RESIDENTIAL", image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00", amcStatus: "ACTIVE", amcColor: "text-green-600" },
 ];
 
 const FALLBACK_ASSETS = [

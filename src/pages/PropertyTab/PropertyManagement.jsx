@@ -11,7 +11,11 @@ import WorkorderTab from "./WorkorderTab";
 import AssetTrackingTab from "./AssetTrackingTab";
 import ReportsTab from "./ReportsTab";
 import AddPropertyModal from "./AddPropertyModal";
-import { getProperties, getPropertySummary, deleteProperty } from "./propertyService";
+import { getProperties, getPropertySummary, deleteProperty, updateProperty, getPropertyWithFloors } from "./propertyService";
+
+const IMAGE_ACCEPT = "image/jpeg,image/png,image/gif,image/webp";
+const IMAGE_PREVIEW_WIDTH = 400;
+const IMAGE_PREVIEW_HEIGHT = 260;
 
 const TAB_KEYS = {
   properties: "properties",
@@ -48,6 +52,13 @@ export default function PropertyManagement() {
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
+  const [editProperty, setEditProperty] = useState(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsProperty, setDetailsProperty] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState(null);
 
   const loadProperties = () => {
     setLoading(true);
@@ -114,6 +125,206 @@ export default function PropertyManagement() {
   const handleDeleteCancel = () => {
     setDeleteConfirmId(null);
     setDeleteError(null);
+  };
+
+  const handleEditClick = async (e, property) => {
+    e.stopPropagation();
+    setMenuOpenId(null);
+    setEditError(null);
+    setEditLoading(true);
+    try {
+      const data = await getPropertyWithFloors(property.id);
+      const floors = (data?.floors || []).map((floor) => ({
+        floorNumber: floor.floorNumber ?? "",
+        zones: (floor.zones && floor.zones.length
+          ? floor.zones
+          : [{ name: "" }]
+        ).map((z) => ({ name: z.name || "" })),
+      }));
+
+      setEditProperty({
+        id: data?.id ?? property.id,
+        propertyName: data?.propertyName || property.name || "",
+        imageFile: null,
+        imagePreview: data?.imageUrl || property.image || null,
+        floors: floors.length
+          ? floors
+          : [
+              {
+                floorNumber: "",
+                zones: [{ name: "" }],
+              },
+            ],
+      });
+    } catch (err) {
+      setEditError(err?.message || "Failed to load property");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditProperty(null);
+    setEditError(null);
+  };
+
+  const handleEditSave = async () => {
+    if (!editProperty?.id) return;
+    setEditLoading(true);
+    setEditError(null);
+    try {
+      const floors = (editProperty.floors || [])
+        .filter(
+          (floor) =>
+            floor.floorNumber &&
+            floor.zones &&
+            floor.zones.some((z) => z.name && z.name.trim())
+        )
+        .map((floor) => ({
+          floorNumber: Number(floor.floorNumber),
+          zones: floor.zones
+            .filter((z) => z.name && z.name.trim())
+            .map((z) => ({ name: z.name.trim() })),
+        }));
+
+      const fd = new FormData();
+      fd.append("propertyName", editProperty.propertyName || "");
+      fd.append("floors", JSON.stringify(floors));
+      if (editProperty.imageFile) fd.append("image", editProperty.imageFile);
+
+      const res = await updateProperty(editProperty.id, fd);
+      if (res?.success === false) {
+        setEditError(res?.message || "Failed to update property");
+      } else {
+        setEditProperty(null);
+        loadProperties();
+        loadSummary();
+      }
+    } catch (err) {
+      setEditError(err?.message || "Failed to update property");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleEditFieldChange = (field, value) => {
+    setEditProperty((prev) => (prev ? { ...prev, [field]: value } : prev));
+    setEditError(null);
+  };
+
+  const handleEditFloorNumberChange = (index, value) => {
+    setEditProperty((prev) => {
+      if (!prev) return prev;
+      const floors = [...(prev.floors || [])];
+      floors[index] = { ...floors[index], floorNumber: value };
+      return { ...prev, floors };
+    });
+    setEditError(null);
+  };
+
+  const handleEditZoneNameChange = (floorIndex, zoneIndex, value) => {
+    setEditProperty((prev) => {
+      if (!prev) return prev;
+      const floors = [...(prev.floors || [])];
+      const zones = [...(floors[floorIndex]?.zones || [])];
+      zones[zoneIndex] = { ...zones[zoneIndex], name: value };
+      floors[floorIndex] = { ...floors[floorIndex], zones };
+      return { ...prev, floors };
+    });
+    setEditError(null);
+  };
+
+  const handleEditAddFloor = () => {
+    setEditProperty((prev) => {
+      if (!prev) return prev;
+      const floors = [...(prev.floors || [])];
+      floors.push({
+        floorNumber: "",
+        zones: [{ name: "" }],
+      });
+      return { ...prev, floors };
+    });
+    setEditError(null);
+  };
+
+  const handleEditRemoveFloor = (index) => {
+    setEditProperty((prev) => {
+      if (!prev) return prev;
+      const floors = [...(prev.floors || [])];
+      if (floors.length <= 1) return prev;
+      floors.splice(index, 1);
+      return { ...prev, floors };
+    });
+    setEditError(null);
+  };
+
+  const handleEditAddZone = (floorIndex) => {
+    setEditProperty((prev) => {
+      if (!prev) return prev;
+      const floors = [...(prev.floors || [])];
+      const zones = [...(floors[floorIndex]?.zones || [])];
+      zones.push({ name: "" });
+      floors[floorIndex] = { ...floors[floorIndex], zones };
+      return { ...prev, floors };
+    });
+    setEditError(null);
+  };
+
+  const handleEditRemoveZone = (floorIndex, zoneIndex) => {
+    setEditProperty((prev) => {
+      if (!prev) return prev;
+      const floors = [...(prev.floors || [])];
+      const zones = [...(floors[floorIndex]?.zones || [])];
+      if (zones.length <= 1) return prev;
+      zones.splice(zoneIndex, 1);
+      floors[floorIndex] = { ...floors[floorIndex], zones };
+      return { ...prev, floors };
+    });
+    setEditError(null);
+  };
+
+  const handleEditImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!/^image\/(jpeg|png|gif|webp)$/i.test(file.type)) {
+      setEditError("Please select a valid image (jpeg, png, gif, webp)");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () =>
+      setEditProperty((prev) =>
+        prev ? { ...prev, imageFile: file, imagePreview: reader.result } : prev
+      );
+    reader.readAsDataURL(file);
+    setEditError(null);
+  };
+
+  const handleEditRemoveImage = () => {
+    setEditProperty((prev) =>
+      prev ? { ...prev, imageFile: null, imagePreview: null } : prev
+    );
+    setEditError(null);
+  };
+
+  const handleViewDetails = async (id) => {
+    setDetailsOpen(true);
+    setDetailsLoading(true);
+    setDetailsError(null);
+    setDetailsProperty(null);
+    try {
+      const data = await getPropertyWithFloors(id);
+      setDetailsProperty(data);
+    } catch (err) {
+      setDetailsError(err?.message || "Failed to load property details");
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const handleDetailsClose = () => {
+    setDetailsOpen(false);
+    setDetailsProperty(null);
+    setDetailsError(null);
   };
 
   const s = summary || { total: 42, activeAmc: 38, expiringAmc: 4, occupancyPercent: 92 };
@@ -221,7 +432,7 @@ export default function PropertyManagement() {
               <option>Expired</option>
               <option>Expiring Soon</option>
             </select>
-            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-sm">
+            {/* <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-sm">
               <option>Property Type</option>
               <option>Commercial</option>
               <option>Residential</option>
@@ -229,7 +440,7 @@ export default function PropertyManagement() {
             </select>
             <button type="button" className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
               Advanced
-            </button>
+            </button> */}
           </div>
 
           {/* Property grid (from backend/database) */}
@@ -260,6 +471,13 @@ export default function PropertyManagement() {
                           <div className="absolute right-0 top-full mt-1 py-1 w-44 bg-white rounded-lg border border-gray-200 shadow-lg z-10">
                             <button
                               type="button"
+                              onClick={(e) => handleEditClick(e, p)}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded"
+                            >
+                              Edit Property
+                            </button>
+                            <button
+                              type="button"
                               onClick={(e) => handleDeleteClick(e, p.id)}
                               className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded"
                             >
@@ -272,9 +490,12 @@ export default function PropertyManagement() {
                     <div className="p-5">
                       <h3 className="text-lg font-bold text-[#0d121b]">{p.name}</h3>
                       {/* <p className="text-xs text-[#4c669a] mb-3">{p.location}</p> */}
-
                       <p className={`text-xs font-semibold ${p.amcColor || "text-green-600"}`}>• {p.amcStatus || "ACTIVE"}</p>
-                      <button type="button" className="mt-3 text-sm font-semibold text-[#1f2937] hover:underline">
+                      <button
+                        type="button"
+                        onClick={() => handleViewDetails(p.id)}
+                        className="mt-3 text-sm font-semibold text-[#1f2937] hover:underline"
+                      >
                         {p.isExpired ? "Renew Now →" : "View Details →"}
                       </button>
                     </div>
@@ -343,6 +564,287 @@ export default function PropertyManagement() {
               >
                 {deleteLoading ? "Deleting…" : "Delete"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit property modal (uses PATCH /api/properties/:id with floors & image) */}
+      {editProperty && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={handleEditCancel}>
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-start justify-between">
+              <div>
+                <p className="text-lg font-bold text-[#0d121b]">Edit Property</p>
+                <p className="text-sm text-gray-500 mt-0.5">Update name, image, floors and zones</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleEditCancel}
+                disabled={editLoading}
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 disabled:opacity-50"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <section>
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                  Property Information
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Property Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Skyline Heights"
+                      value={editProperty.propertyName || ""}
+                      onChange={(e) => handleEditFieldChange("propertyName", e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#1f2937]/20"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Property Image</label>
+                    <p className="text-xs text-gray-500 mb-2">jpeg, png, gif, webp</p>
+                    {editProperty.imagePreview ? (
+                      <div className="space-y-2">
+                        <div
+                          className="border border-gray-200 rounded-lg overflow-hidden bg-gray-100"
+                          style={{ width: IMAGE_PREVIEW_WIDTH, height: IMAGE_PREVIEW_HEIGHT }}
+                        >
+                          <img
+                            src={editProperty.imagePreview}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                            style={{ width: IMAGE_PREVIEW_WIDTH, height: IMAGE_PREVIEW_HEIGHT }}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleEditRemoveImage}
+                          className="text-sm text-red-600 hover:underline"
+                        >
+                          Remove image
+                        </button>
+                      </div>
+                    ) : (
+                      <label
+                        className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                        style={{ width: IMAGE_PREVIEW_WIDTH, height: IMAGE_PREVIEW_HEIGHT }}
+                      >
+                        <span className="text-sm text-gray-500">Click to upload</span>
+                        <input
+                          type="file"
+                          accept={IMAGE_ACCEPT}
+                          onChange={handleEditImageChange}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Floors & Zones</h3>
+                <div className="space-y-4">
+                  {editProperty.floors.map((floor, floorIndex) => (
+                    <div key={floorIndex} className="border border-gray-200 rounded-lg p-3 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Floor Number
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="e.g. 1"
+                            value={floor.floorNumber}
+                            onChange={(e) => handleEditFloorNumberChange(floorIndex, e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#1f2937]/20"
+                            required
+                          />
+                        </div>
+                        {editProperty.floors.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleEditRemoveFloor(floorIndex)}
+                            className="mt-6 px-2 py-1 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
+                          >
+                            Remove Floor
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            Zones
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleEditAddZone(floorIndex)}
+                            className="text-xs text-[#1f2937] font-medium hover:underline"
+                          >
+                            + Add Zone
+                          </button>
+                        </div>
+
+                        <div className="space-y-2">
+                          {floor.zones.map((zone, zoneIndex) => (
+                            <div key={zoneIndex} className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                placeholder="e.g. Zone A"
+                                value={zone.name}
+                                onChange={(e) =>
+                                  handleEditZoneNameChange(floorIndex, zoneIndex, e.target.value)
+                                }
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#1f2937]/20"
+                                required
+                              />
+                              {floor.zones.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditRemoveZone(floorIndex, zoneIndex)}
+                                  className="px-2 py-1 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={handleEditAddFloor}
+                    className="w-full border border-dashed border-gray-300 rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50"
+                  >
+                    + Add Floor
+                  </button>
+                </div>
+              </section>
+
+              {editError && <p className="text-sm text-red-600 text-center">{editError}</p>}
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={handleEditCancel}
+                  disabled={editLoading}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleEditSave}
+                  disabled={editLoading}
+                  className="px-4 py-2 bg-[#1f2937] text-white rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50"
+                >
+                  {editLoading ? "Saving…" : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View details modal (GET /api/properties/:id?include=floors) */}
+      {detailsOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/50" onClick={handleDetailsClose}>
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-start justify-between">
+              <div>
+                <p className="text-lg font-bold text-[#0d121b]">
+                  {detailsProperty?.propertyName || "Property Details"}
+                </p>
+                {detailsProperty && (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                     • Created{" "}
+                    {new Date(detailsProperty.createdAt).toLocaleString()}  • Updated{" "}
+                    {new Date(detailsProperty.updatedAt).toLocaleString()}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={handleDetailsClose}
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {detailsLoading && (
+                <p className="text-sm text-gray-500 text-center">Loading property details…</p>
+              )}
+
+              {detailsError && (
+                <p className="text-sm text-red-600 text-center">{detailsError}</p>
+              )}
+
+              {detailsProperty && !detailsLoading && !detailsError && (
+                <>
+                  {detailsProperty.imageUrl && (
+                    <div
+                      className="border border-gray-200 rounded-lg overflow-hidden bg-gray-100 mx-auto"
+                      style={{ width: IMAGE_PREVIEW_WIDTH, height: IMAGE_PREVIEW_HEIGHT }}
+                    >
+                      <img
+                        src={detailsProperty.imageUrl}
+                        alt={detailsProperty.propertyName}
+                        className="w-full h-full object-cover"
+                        style={{ width: IMAGE_PREVIEW_WIDTH, height: IMAGE_PREVIEW_HEIGHT }}
+                      />
+                    </div>
+                  )}
+
+                  <section>
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                      Floors & Zones
+                    </h3>
+                    {detailsProperty.floors && detailsProperty.floors.length ? (
+                      <div className="space-y-3">
+                        {detailsProperty.floors.map((floor) => (
+                          <div
+                            key={floor.id}
+                            className="border border-gray-200 rounded-lg p-3 flex justify-between items-start"
+                          >
+                            <div>
+                              <p className="text-sm font-semibold text-[#0d121b]">
+                                Floor {floor.floorNumber}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Created {new Date(floor.createdAt).toLocaleString()}
+                              </p>
+                            </div>
+                            <div className="text-sm text-gray-700">
+                              {floor.zones && floor.zones.length ? (
+                                <span>
+                                  Zones:{" "}
+                                  {floor.zones.map((z) => z.name).join(", ")}
+                                </span>
+                              ) : (
+                                <span>No zones</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">No floors configured.</p>
+                    )}
+                  </section>
+                </>
+              )}
             </div>
           </div>
         </div>

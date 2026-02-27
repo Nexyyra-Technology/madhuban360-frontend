@@ -70,7 +70,8 @@ export default function EditTaskModal({ task, onClose, onSuccess }) {
       setTaskName(task.title || "");
       setCategory(task.category || "");
       setDescription(task.description || "");
-      setAssigneeId(task.assigneeId || "");
+      const aid = task.assigneeId ?? task.assignee?.id ?? task.assignee?._id;
+      setAssigneeId(aid != null ? String(aid) : "");
       setPriority(task.priority || "HIGH");
       setPropertyRoom(task.location || ZONES[0]);
       setDepartmentId(task.departmentId || "");
@@ -119,9 +120,9 @@ export default function EditTaskModal({ task, onClose, onSuccess }) {
     }
   }, [task]);
 
-  // Backend: fetch users for assignee dropdown (GET /api/users?page=1&limit=10)
+  // Backend: fetch staff for assignee dropdown (GET /api/users/staff)
   useEffect(() => {
-    getUsersForAssignee(1, 10).then((users) => setStaff(Array.isArray(users) ? users : []));
+    getUsersForAssignee().then((users) => setStaff(Array.isArray(users) ? users : []));
   }, []);
 
   // Task duration (auto-calculated from start and end time)
@@ -161,7 +162,10 @@ export default function EditTaskModal({ task, onClose, onSuccess }) {
         description: description.trim() || undefined,
         category,
         assigneeId: assigneeId || undefined,
-        assignee: staff.find((u) => u._id === assigneeId) ? { name: staff.find((u) => u._id === assigneeId).name } : task.assignee,
+        assignee: (() => {
+          const u = staff.find((s) => String(s.id ?? s._id ?? "") === String(assigneeId));
+          return u ? { name: u.name || u.email || u.username } : task.assignee;
+        })(),
         priority,
         location: propertyRoom,
         departmentId: departmentId || undefined,
@@ -250,9 +254,14 @@ export default function EditTaskModal({ task, onClose, onSuccess }) {
                 className="w-full border px-4 py-2 rounded-lg"
               >
                 <option value="">Select staff member...</option>
-                {staff.map((u) => (
-                  <option key={u._id} value={u._id}>{u.name || u.email}</option>
-                ))}
+                {staff.map((u) => {
+                  const id = String(u.id ?? u._id ?? "");
+                  return (
+                    <option key={id} value={id}>
+                      {u.name || u.email || u.username || id || "—"}
+                    </option>
+                  );
+                })}
               </select>
             </div>
             <div>

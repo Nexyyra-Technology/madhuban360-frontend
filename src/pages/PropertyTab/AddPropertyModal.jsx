@@ -9,8 +9,7 @@ import { useState } from "react";
 import { createProperty } from "./propertyService";
 
 const IMAGE_ACCEPT = "image/jpeg,image/png,image/gif,image/webp";
-const IMAGE_PREVIEW_WIDTH = 400;
-const IMAGE_PREVIEW_HEIGHT = 300;
+const IMAGE_PREVIEW_HEIGHT = 260;
 
 const initialState = {
   propertyName: "",
@@ -211,14 +210,14 @@ export default function AddPropertyModal({ isOpen, onClose, onSuccess }) {
                 {form.imagePreview ? (
                   <div className="space-y-2">
                     <div
-                      className="border border-gray-200 rounded-lg overflow-hidden bg-gray-100"
-                      style={{ width: IMAGE_PREVIEW_WIDTH, height: IMAGE_PREVIEW_HEIGHT }}
+                      className="border border-gray-200 rounded-xl overflow-hidden bg-gray-50 shadow-sm w-full"
+                      style={{ height: IMAGE_PREVIEW_HEIGHT }}
                     >
                       <img
                         src={form.imagePreview}
                         alt="Preview"
                         className="w-full h-full object-cover"
-                        style={{ width: IMAGE_PREVIEW_WIDTH, height: IMAGE_PREVIEW_HEIGHT }}
+                        style={{ height: IMAGE_PREVIEW_HEIGHT }}
                       />
                     </div>
                     <button
@@ -230,10 +229,12 @@ export default function AddPropertyModal({ isOpen, onClose, onSuccess }) {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                    style={{ width: IMAGE_PREVIEW_WIDTH, height: IMAGE_PREVIEW_HEIGHT }}
+                  <label
+                    className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50/60 hover:bg-gray-100 transition-colors px-4"
+                    style={{ minHeight: IMAGE_PREVIEW_HEIGHT }}
                   >
-                    <span className="text-sm text-gray-500">Click to upload</span>
+                    <span className="text-base font-medium text-gray-600 mb-1">Click to upload</span>
+                    <span className="text-xs text-gray-500">Recommended aspect 4:3 • Max few MB</span>
                     <input
                       type="file"
                       accept={IMAGE_ACCEPT}

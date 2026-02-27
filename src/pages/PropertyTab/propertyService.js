@@ -58,6 +58,19 @@ export async function getPropertyById(id) {
   }
 }
 
+/** GET /api/properties/:id?include=floors - Fetch property with nested floors & zones */
+export async function getPropertyWithFloors(id) {
+  try {
+    const res = await fetch(`${API_PROPERTIES}/${id}?include=floors`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error("Property not found");
+    const json = await res.json();
+    return json?.data ?? json;
+  } catch (e) {
+    console.warn("[propertyService] getPropertyWithFloors error", e);
+    return null;
+  }
+}
+
 /** POST /api/properties - Create new property (multipart/form-data: propertyName, floors, image) */
 export async function createProperty(formData) {
   const headers = getAuthHeaders();
@@ -78,10 +91,23 @@ export async function createProperty(formData) {
   return readJsonOrThrow(res);
 }
 
-/** PUT /api/properties/:id - Update property */
+/** PATCH /api/properties/:id - Update property (supports JSON or FormData) */
 export async function updateProperty(id, data) {
-  const res = await fetch(`${API_PROPERTIES}/${id}`, {
-    method: "PUT",
+  const url = `${API_PROPERTIES}/${id}`;
+
+  // If FormData (e.g. propertyName, floors, image)
+  if (data instanceof FormData) {
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+      body: data,
+    });
+    return readJsonOrThrow(res);
+  }
+
+  // Fallback JSON body
+  const res = await fetch(url, {
+    method: "PATCH",
     headers: getAuthHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(data),
   });

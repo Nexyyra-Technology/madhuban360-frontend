@@ -93,34 +93,41 @@ export async function getTaskById(id) {
   }
 }
 
-/** Backend: POST /api/tasks - create new task; body saved to backend/database */
+/** Backend: POST /api/tasks - create task (JSON or FormData when attachments are files) */
 export async function createTask(data) {
-  // Transform frontend data to match backend API format
+  const headers = getAuthHeaders();
+
+  if (data instanceof FormData) {
+    const res = await fetch(API_BASE, {
+      method: "POST",
+      headers,
+      body: data,
+    });
+    return await readJsonOrThrow(res);
+  }
+
   const apiData = {
     taskName: data.title || data.taskName,
     departmentId: data.departmentId,
-    description: data.description,
+    description: data.description ?? "",
     assigneeId: data.assigneeId,
-    priority: data.priority?.toUpperCase() || "NORMAL",
+    priority: (data.priority ?? "NORMAL").toUpperCase(),
     propertyId: data.propertyId,
-    dueDate: data.dueDate,
     startDate: data.startDate,
     endDate: data.endDate,
     startTime: data.startTime,
     endTime: data.endTime,
     timeDuration: data.timeDuration,
-    frequency: data.frequency,
-    status: data.status?.toLowerCase() || "pending",
-    roomNumber: data.roomNumber,
-    locationFloor: data.locationFloor,
+    frequency: data.frequency || undefined,
+    floorId: data.floorId,
+    zoneId: data.zoneId,
     instructions: Array.isArray(data.instructions) ? data.instructions : [],
-    guestRequest: data.guestRequest,
     attachments: Array.isArray(data.attachments) ? data.attachments : [],
   };
-  
+
   const res = await fetch(API_BASE, {
     method: "POST",
-    headers: getAuthHeaders({ "Content-Type": "application/json" }),
+    headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify(apiData),
   });
   return await readJsonOrThrow(res);

@@ -54,16 +54,20 @@ export async function getUsers() {
   }
 }
 
-/** GET {{baseUrl}}/api/users?page=1&limit=10 - fetch users for assignee dropdown (Create/Edit Task) */
-export async function getUsersForAssignee(page = 1, limit = 10) {
+/** GET {{baseUrl}}/api/users/staff - fetch staff users for assignee dropdown (Create/Edit Task) */
+export async function getUsersForAssignee() {
   try {
-    const res = await fetch(`${API_BASE}?page=${page}&limit=${limit}`, {
+    const res = await fetch(`${API_BASE}/staff`, {
       headers: getAuthHeaders(),
     });
-    if (!res.ok) throw new Error("Failed to fetch users");
+    if (!res.ok) throw new Error("Failed to fetch staff users");
     const json = await res.json();
-    const users = json?.data?.users ?? json?.users ?? (Array.isArray(json) ? json : []);
-    return users.map(normalizeUser);
+    const users =
+      (Array.isArray(json?.data) && json.data) ||
+      json?.data?.users ||
+      json?.users ||
+      (Array.isArray(json) ? json : []);
+    return (users || []).map(normalizeUser);
   } catch (err) {
     console.error("getUsersForAssignee error:", err);
     return [];

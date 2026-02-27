@@ -38,6 +38,15 @@ export default function EditTaskModal({ task, onClose, onSuccess }) {
   const [endTimeHour, setEndTimeHour] = useState("5");
   const [endTimeMin, setEndTimeMin] = useState("00");
   const [endTimeAmPm, setEndTimeAmPm] = useState("PM");
+  const [departmentId, setDepartmentId] = useState("");
+  const [propertyId, setPropertyId] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [timeDuration, setTimeDuration] = useState("");
+  const [frequency, setFrequency] = useState("");
+  const [roomNumber, setRoomNumber] = useState("");
+  const [locationFloor, setLocationFloor] = useState("");
+  const [guestRequest, setGuestRequest] = useState("");
   const [staff, setStaff] = useState([]);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -64,9 +73,25 @@ export default function EditTaskModal({ task, onClose, onSuccess }) {
       setAssigneeId(task.assigneeId || "");
       setPriority(task.priority || "HIGH");
       setPropertyRoom(task.location || ZONES[0]);
+      setDepartmentId(task.departmentId || "");
+      setPropertyId(task.propertyId || "");
+      setRoomNumber(task.roomNumber || "");
+      setLocationFloor(task.locationFloor || "");
+      setGuestRequest(task.guestRequest || "");
+      setFrequency(task.frequency || "");
+      
       const d = task.dueDate || "";
       setDueDate(d.includes("-") ? d : d ? d.replace(/\//g, "-").split("-").reverse().join("-") : "");
+      
+      const startD = task.startDate || "";
+      setStartDate(startD.includes("-") ? startD : startD ? startD.replace(/\//g, "-").split("-").reverse().join("-") : "");
+      
+      const endD = task.endDate || "";
+      setEndDate(endD.includes("-") ? endD : endD ? endD.replace(/\//g, "-").split("-").reverse().join("-") : "");
+      
+      setTimeDuration(task.timeDuration || "");
       setDueTime(task.dueTime || "14:00");
+      
       // Parse startTime/endTime "H:MM AM/PM", "HH:MM AM/PM", or 24h "HH:MM"
       const parseTime = (str) => {
         if (!str || typeof str !== "string") return { hour: "9", min: "00", amPm: "AM" };
@@ -139,6 +164,15 @@ export default function EditTaskModal({ task, onClose, onSuccess }) {
         assignee: staff.find((u) => u._id === assigneeId) ? { name: staff.find((u) => u._id === assigneeId).name } : task.assignee,
         priority,
         location: propertyRoom,
+        departmentId: departmentId || undefined,
+        propertyId: propertyId || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        timeDuration: timeDuration || undefined,
+        frequency: frequency || undefined,
+        roomNumber: roomNumber || undefined,
+        locationFloor: locationFloor || undefined,
+        guestRequest: guestRequest.trim() || undefined,
         dueDate: dueDate || undefined,
         dueTime: dueTime || undefined,
         startTime,

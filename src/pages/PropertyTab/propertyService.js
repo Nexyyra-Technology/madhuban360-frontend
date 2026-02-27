@@ -58,12 +58,22 @@ export async function getPropertyById(id) {
   }
 }
 
-/** POST /api/properties - Create new property (saves to database) */
-export async function createProperty(data) {
+/** POST /api/properties - Create new property (multipart/form-data: propertyName, floors, image) */
+export async function createProperty(formData) {
+  const headers = getAuthHeaders();
+  if (!(formData instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+    const res = await fetch(API_PROPERTIES, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(formData),
+    });
+    return readJsonOrThrow(res);
+  }
   const res = await fetch(API_PROPERTIES, {
     method: "POST",
-    headers: getAuthHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify(data),
+    headers,
+    body: formData,
   });
   return readJsonOrThrow(res);
 }

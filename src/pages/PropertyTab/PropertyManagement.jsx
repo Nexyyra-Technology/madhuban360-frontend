@@ -271,7 +271,7 @@ export default function PropertyManagement() {
                     </div>
                     <div className="p-5">
                       <h3 className="text-lg font-bold text-[#0d121b]">{p.name}</h3>
-                      <p className="text-xs text-[#4c669a] mb-3">{p.location}</p>
+                      {/* <p className="text-xs text-[#4c669a] mb-3">{p.location}</p> */}
 
                       <p className={`text-xs font-semibold ${p.amcColor || "text-green-600"}`}>• {p.amcStatus || "ACTIVE"}</p>
                       <button type="button" className="mt-3 text-sm font-semibold text-[#1f2937] hover:underline">

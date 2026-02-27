@@ -19,6 +19,7 @@ function normalizeTask(t) {
   const rawStatus = (t.status ?? "pending").toLowerCase();
   const statusMap = { pending: "TO_DO", in_progress: "IN_PROGRESS", review: "REVIEW", completed: "COMPLETED", pending_approval: "REVIEW" };
   const status = statusMap[rawStatus] ?? rawStatus.toUpperCase().replace(/\s/g, "_");
+  
   return {
     ...t,
     _id: t.id ?? t._id,
@@ -34,6 +35,19 @@ function normalizeTask(t) {
     roomNumber: t.roomNumber ?? t.room_number ?? null,
     locationFloor: t.locationFloor ?? t.location_floor ?? t.location ?? null,
     category: t.category ?? t.departmentName ?? t.department ?? null,
+    departmentId: t.departmentId ?? null,
+    propertyId: t.propertyId ?? null,
+    propertyName: t.propertyName ?? null,
+    startDate: t.startDate ? formatDueDate(t.startDate) : t.startDate,
+    endDate: t.endDate ? formatDueDate(t.endDate) : t.endDate,
+    startTime: t.startTime ?? null,
+    endTime: t.endTime ?? null,
+    timeDuration: t.timeDuration ?? null,
+    frequency: t.frequency ?? null,
+    guestRequest: t.guestRequest ?? null,
+    attachments: Array.isArray(t.attachments) ? t.attachments : [],
+    createdAt: t.createdAt ?? null,
+    updatedAt: t.updatedAt ?? null,
   };
 }
 
@@ -81,20 +95,66 @@ export async function getTaskById(id) {
 
 /** Backend: POST /api/tasks - create new task; body saved to backend/database */
 export async function createTask(data) {
+  // Transform frontend data to match backend API format
+  const apiData = {
+    taskName: data.title || data.taskName,
+    departmentId: data.departmentId,
+    description: data.description,
+    assigneeId: data.assigneeId,
+    priority: data.priority?.toUpperCase() || "NORMAL",
+    propertyId: data.propertyId,
+    dueDate: data.dueDate,
+    startDate: data.startDate,
+    endDate: data.endDate,
+    startTime: data.startTime,
+    endTime: data.endTime,
+    timeDuration: data.timeDuration,
+    frequency: data.frequency,
+    status: data.status?.toLowerCase() || "pending",
+    roomNumber: data.roomNumber,
+    locationFloor: data.locationFloor,
+    instructions: Array.isArray(data.instructions) ? data.instructions : [],
+    guestRequest: data.guestRequest,
+    attachments: Array.isArray(data.attachments) ? data.attachments : [],
+  };
+  
   const res = await fetch(API_BASE, {
     method: "POST",
     headers: getAuthHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify(data),
+    body: JSON.stringify(apiData),
   });
   return await readJsonOrThrow(res);
 }
 
 /** Backend: PUT /api/tasks/:id - update task; changes saved to backend/database */
 export async function updateTask(id, data) {
+  // Transform frontend data to match backend API format
+  const apiData = {
+    taskName: data.title || data.taskName,
+    departmentId: data.departmentId,
+    description: data.description,
+    assigneeId: data.assigneeId,
+    priority: data.priority?.toUpperCase() || "NORMAL",
+    propertyId: data.propertyId,
+    dueDate: data.dueDate,
+    startDate: data.startDate,
+    endDate: data.endDate,
+    startTime: data.startTime,
+    endTime: data.endTime,
+    timeDuration: data.timeDuration,
+    frequency: data.frequency,
+    status: data.status?.toLowerCase() || "pending",
+    roomNumber: data.roomNumber,
+    locationFloor: data.locationFloor,
+    instructions: Array.isArray(data.instructions) ? data.instructions : [],
+    guestRequest: data.guestRequest,
+    attachments: Array.isArray(data.attachments) ? data.attachments : [],
+  };
+  
   const res = await fetch(`${API_BASE}/${id}`, {
     method: "PUT",
     headers: getAuthHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify(data),
+    body: JSON.stringify(apiData),
   });
   return await readJsonOrThrow(res);
 }
@@ -104,7 +164,7 @@ export async function updateTaskStatus(id, status) {
   const res = await fetch(`${API_BASE}/${id}/status`, {
     method: "PATCH",
     headers: getAuthHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status: status.toLowerCase() }),
   });
   return await readJsonOrThrow(res);
 }

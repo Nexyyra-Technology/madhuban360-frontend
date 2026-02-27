@@ -8,26 +8,20 @@
 import { useState } from "react";
 import { createProperty } from "./propertyService";
 
-const PROPERTY_TYPES = [
-  { value: "", label: "Select type" },
-  { value: "COMMERCIAL", label: "Commercial" },
-  { value: "RESIDENTIAL", label: "Residential" },
-  { value: "INDUSTRIAL", label: "Industrial" },
-  { value: "MIXED", label: "Mixed Use" },
-];
+const IMAGE_ACCEPT = "image/jpeg,image/png,image/gif,image/webp";
+const IMAGE_PREVIEW_WIDTH = 400;
+const IMAGE_PREVIEW_HEIGHT = 300;
 
 const initialState = {
   propertyName: "",
-  propertyId: "PROP-XXX",
-  propertyType: "",
-  fullAddress: "",
-  city: "",
-  stateProvince: "",
-  zipCode: "",
-  totalUnits: "",
-  unitsSold: "",
-  unitsUnsold: "",
-  primaryContact: "",
+  imageFile: null,
+  imagePreview: null,
+  floors: [
+    {
+      floorNumber: "",
+      zones: [{ name: "" }],
+    },
+  ],
 };
 
 export default function AddPropertyModal({ isOpen, onClose, onSuccess }) {
@@ -40,25 +34,49 @@ export default function AddPropertyModal({ isOpen, onClose, onSuccess }) {
     setError("");
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!/^image\/(jpeg|png|gif|webp)$/i.test(file.type)) {
+      setError("Please select a valid image (jpeg, png, gif, webp)");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setForm((prev) => ({ ...prev, imageFile: file, imagePreview: reader.result }));
+    reader.readAsDataURL(file);
+    setError("");
+  };
+
+  const handleRemoveImage = () => {
+    setForm((prev) => ({ ...prev, imageFile: null, imagePreview: null }));
+    setError("");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSaving(true);
     try {
-      const payload = {
-        name: form.propertyName,
-        propertyId: form.propertyId || undefined,
-        type: form.propertyType,
-        address: form.fullAddress,
-        city: form.city,
-        stateProvince: form.stateProvince,
-        zipCode: form.zipCode,
-        totalUnits: Number(form.totalUnits) || 0,
-        unitsSold: Number(form.unitsSold) || 0,
-        unitsUnsold: Number(form.unitsUnsold) || 0,
-        primaryContact: form.primaryContact,
-      };
-      await createProperty(payload);
+      const floors = (form.floors || [])
+        .filter(
+          (floor) =>
+            floor.floorNumber &&
+            floor.zones &&
+            floor.zones.some((z) => z.name && z.name.trim())
+        )
+        .map((floor) => ({
+          floorNumber: Number(floor.floorNumber),
+          zones: floor.zones
+            .filter((z) => z.name && z.name.trim())
+            .map((z) => ({ name: z.name.trim() })),
+        }));
+
+      const fd = new FormData();
+      fd.append("propertyName", form.propertyName);
+      fd.append("floors", JSON.stringify(floors));
+      if (form.imageFile) fd.append("image", form.imageFile);
+
+      await createProperty(fd);
       setForm(initialState);
       onClose();
       onSuccess?.();
@@ -67,6 +85,73 @@ export default function AddPropertyModal({ isOpen, onClose, onSuccess }) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleFloorNumberChange = (index, value) => {
+    setForm((prev) => {
+      const floors = [...prev.floors];
+      floors[index] = { ...floors[index], floorNumber: value };
+      return { ...prev, floors };
+    });
+    setError("");
+  };
+
+  const handleZoneNameChange = (floorIndex, zoneIndex, value) => {
+    setForm((prev) => {
+      const floors = [...prev.floors];
+      const zones = [...(floors[floorIndex]?.zones || [])];
+      zones[zoneIndex] = { ...zones[zoneIndex], name: value };
+      floors[floorIndex] = { ...floors[floorIndex], zones };
+      return { ...prev, floors };
+    });
+    setError("");
+  };
+
+  const handleAddFloor = () => {
+    setForm((prev) => ({
+      ...prev,
+      floors: [
+        ...prev.floors,
+        {
+          floorNumber: "",
+          zones: [{ name: "" }],
+        },
+      ],
+    }));
+    setError("");
+  };
+
+  const handleRemoveFloor = (index) => {
+    setForm((prev) => {
+      const floors = [...prev.floors];
+      if (floors.length <= 1) return prev;
+      floors.splice(index, 1);
+      return { ...prev, floors };
+    });
+    setError("");
+  };
+
+  const handleAddZone = (floorIndex) => {
+    setForm((prev) => {
+      const floors = [...prev.floors];
+      const zones = [...(floors[floorIndex]?.zones || [])];
+      zones.push({ name: "" });
+      floors[floorIndex] = { ...floors[floorIndex], zones };
+      return { ...prev, floors };
+    });
+    setError("");
+  };
+
+  const handleRemoveZone = (floorIndex, zoneIndex) => {
+    setForm((prev) => {
+      const floors = [...prev.floors];
+      const zones = [...(floors[floorIndex]?.zones || [])];
+      if (zones.length <= 1) return prev;
+      zones.splice(zoneIndex, 1);
+      floors[floorIndex] = { ...floors[floorIndex], zones };
+      return { ...prev, floors };
+    });
+    setError("");
   };
 
   const handleClose = () => {
@@ -121,123 +206,127 @@ export default function AddPropertyModal({ isOpen, onClose, onSuccess }) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Property ID</label>
-                <input
-                  type="text"
-                  placeholder="PROP-XXX"
-                  value={form.propertyId}
-                  onChange={(e) => handleChange("propertyId", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-[#1f2937]/20"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
-                <select
-                  value={form.propertyType}
-                  onChange={(e) => handleChange("propertyType", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#1f2937]/20"
-                >
-                  {PROPERTY_TYPES.map((opt) => (
-                    <option key={opt.value || "empty"} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </section>
-
-          <section>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Location Details</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
-                <input
-                  type="text"
-                  placeholder="Street address, apartment, suite..."
-                  value={form.fullAddress}
-                  onChange={(e) => handleChange("fullAddress", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#1f2937]/20"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                  <input
-                    type="text"
-                    placeholder="City name"
-                    value={form.city}
-                    onChange={(e) => handleChange("city", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#1f2937]/20"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">State/Province</label>
-                  <input
-                    type="text"
-                    placeholder="State"
-                    value={form.stateProvince}
-                    onChange={(e) => handleChange("stateProvince", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#1f2937]/20"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
-                <input
-                  type="text"
-                  placeholder="Zip"
-                  value={form.zipCode}
-                  onChange={(e) => handleChange("zipCode", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#1f2937]/20"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Property Image</label>
+                <p className="text-xs text-gray-500 mb-2">jpeg, png, gif, webp</p>
+                {form.imagePreview ? (
+                  <div className="space-y-2">
+                    <div
+                      className="border border-gray-200 rounded-lg overflow-hidden bg-gray-100"
+                      style={{ width: IMAGE_PREVIEW_WIDTH, height: IMAGE_PREVIEW_HEIGHT }}
+                    >
+                      <img
+                        src={form.imagePreview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                        style={{ width: IMAGE_PREVIEW_WIDTH, height: IMAGE_PREVIEW_HEIGHT }}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="text-sm text-red-600 hover:underline"
+                    >
+                      Remove image
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                    style={{ width: IMAGE_PREVIEW_WIDTH, height: IMAGE_PREVIEW_HEIGHT }}
+                  >
+                    <span className="text-sm text-gray-500">Click to upload</span>
+                    <input
+                      type="file"
+                      accept={IMAGE_ACCEPT}
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
               </div>
             </div>
           </section>
 
           <section>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Operational Details</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Total Units / Area (sq ft)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 120"
-                  value={form.totalUnits}
-                  onChange={(e) => handleChange("totalUnits", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#1f2937]/20"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Units Sold</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 120"
-                    value={form.unitsSold}
-                    onChange={(e) => handleChange("unitsSold", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#1f2937]/20"
-                  />
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Floors & Zones</h3>
+            <div className="space-y-4">
+              {form.floors.map((floor, floorIndex) => (
+                <div key={floorIndex} className="border border-gray-200 rounded-lg p-3 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Floor Number
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="e.g. 1"
+                        value={floor.floorNumber}
+                        onChange={(e) => handleFloorNumberChange(floorIndex, e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#1f2937]/20"
+                        required
+                      />
+                    </div>
+                    {form.floors.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFloor(floorIndex)}
+                        className="mt-6 px-2 py-1 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
+                      >
+                        Remove Floor
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Zones
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleAddZone(floorIndex)}
+                        className="text-xs text-[#1f2937] font-medium hover:underline"
+                      >
+                        + Add Zone
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {floor.zones.map((zone, zoneIndex) => (
+                        <div key={zoneIndex} className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="e.g. Zone A"
+                            value={zone.name}
+                            onChange={(e) =>
+                              handleZoneNameChange(floorIndex, zoneIndex, e.target.value)
+                            }
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#1f2937]/20"
+                            required
+                          />
+                          {floor.zones.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveZone(floorIndex, zoneIndex)}
+                              className="px-2 py-1 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Units Unsold</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 120"
-                    value={form.unitsUnsold}
-                    onChange={(e) => handleChange("unitsUnsold", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#1f2937]/20"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Primary Contact Person</label>
-                <input
-                  type="text"
-                  placeholder="Manager name / Contact Number"
-                  value={form.primaryContact}
-                  onChange={(e) => handleChange("primaryContact", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#1f2937]/20"
-                />
-              </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={handleAddFloor}
+                className="w-full border border-dashed border-gray-300 rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                + Add Floor
+              </button>
             </div>
           </section>
 

@@ -132,6 +132,12 @@ export default function TaskDetails() {
   const categoryDisplay = task.category || task.departmentName || "—";
   const priorityRationale = task.priorityRationale ?? PRIORITY_RATIONALE[task.priority] ?? "";
   const activityLog = buildActivityLog(task);
+  const propertyName = task.propertyName || "—";
+  const guestRequest = task.guestRequest || "";
+  const attachments = task.attachments && Array.isArray(task.attachments) ? task.attachments : [];
+  const frequency = task.frequency || "—";
+  const startDateFormatted = task.startDate ? formatDateTime(task.startDate) : "—";
+  const endDateFormatted = task.endDate ? formatDateTime(task.endDate) : "—";
 
   const startTimeFormatted = task.startTime ? formatDateTime(task.dueDate, task.startTime) : (task.dueDate ? formatDateTime(task.dueDate) : "—");
   const dueTimeFormatted = task.endTime ? formatDateTime(task.dueDate, task.endTime) : (task.dueDate ? formatDateTime(task.dueDate) : "—");
@@ -218,8 +224,15 @@ export default function TaskDetails() {
               )}
             </div>
 
-            {/* Technical Details */}
+            {/* Property Information */}
             <div className="task-details-tech-grid">
+              <div className="task-details-tech-item">
+                <span className="task-details-tech-icon">🏢</span>
+                <div>
+                  <span className="task-details-label">PROPERTY</span>
+                  <span className="task-details-tech-value">{propertyName}</span>
+                </div>
+              </div>
               <div className="task-details-tech-item">
                 <span className="task-details-tech-icon">📍</span>
                 <div>
@@ -234,7 +247,25 @@ export default function TaskDetails() {
                   <span className="task-details-tech-value">{categoryDisplay}</span>
                 </div>
               </div>
+              <div className="task-details-tech-item">
+                <span className="task-details-tech-icon">🔄</span>
+                <div>
+                  <span className="task-details-label">FREQUENCY</span>
+                  <span className="task-details-tech-value">{frequency}</span>
+                </div>
+              </div>
             </div>
+
+            {/* Guest Request */}
+            {guestRequest && (
+              <div className="task-details-card task-details-description-card">
+                <h3 className="task-details-section-title">
+                  <span className="task-details-section-icon">👤</span>
+                  Guest Request
+                </h3>
+                <p className="task-details-desc">{guestRequest}</p>
+              </div>
+            )}
           </div>
 
           {/* Right Column - Sidebar */}
@@ -245,17 +276,31 @@ export default function TaskDetails() {
               <div className="task-details-schedule-list">
                 <div className="task-details-schedule-row">
                   <div>
+                    <span className="task-details-label">START DATE</span>
+                    <span className="task-details-schedule-value">{startDateFormatted}</span>
+                  </div>
+                  <span className="task-details-schedule-icon">📅</span>
+                </div>
+                <div className="task-details-schedule-row">
+                  <div>
+                    <span className="task-details-label">END DATE</span>
+                    <span className="task-details-schedule-value">{endDateFormatted}</span>
+                  </div>
+                  <span className="task-details-schedule-icon">📅</span>
+                </div>
+                <div className="task-details-schedule-row">
+                  <div>
                     <span className="task-details-label">START TIME</span>
                     <span className="task-details-schedule-value">{startTimeFormatted}</span>
                   </div>
-                  <span className="task-details-schedule-icon">📅</span>
+                  <span className="task-details-schedule-icon">⏰</span>
                 </div>
                 <div className="task-details-schedule-row">
                   <div>
                     <span className="task-details-label">DUE TIME</span>
                     <span className="task-details-schedule-value">{dueTimeFormatted}</span>
                   </div>
-                  <span className="task-details-schedule-icon">📅</span>
+                  <span className="task-details-schedule-icon">⏰</span>
                 </div>
                 <div className="task-details-schedule-row">
                   <div>

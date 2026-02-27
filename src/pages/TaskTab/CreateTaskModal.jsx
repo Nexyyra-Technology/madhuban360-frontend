@@ -7,6 +7,7 @@
  *          instructions, guestRequest, attachments, frequency
  */
 import { useState, useEffect } from "react";
+import { Calendar, Clock, MapPin, Building, User, AlertCircle, FileText, Hash } from "lucide-react";
 import { createTask } from "./taskService";
 import { getUsersForAssignee, getDepartments } from "../UserTab/userService";
 import { getProperties } from "../PropertyTab/propertyService";
@@ -52,6 +53,8 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
   const [locationFloor, setLocationFloor] = useState("");
   const [guestRequest, setGuestRequest] = useState("");
   const [frequency, setFrequency] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [startTimeHour, setStartTimeHour] = useState("9");
   const [startTimeMin, setStartTimeMin] = useState("00");
@@ -130,6 +133,8 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
         assigneeId: asnId,
         priority: priority.toUpperCase(),
         propertyId: propId,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
         dueDate: dueDate || undefined,
         startTime: to24h(startTimeHour, startTimeMin, startTimeAmPm),
         endTime: to24h(endTimeHour, endTimeMin, endTimeAmPm),
@@ -165,7 +170,10 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
           <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3">BASIC INFO</h3>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Task Name</label>
+              <label className="block text-sm text-gray-600 mb-1 flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Task Name
+              </label>
               <input
                 type="text"
                 placeholder="e.g. HVAC Filter Replacement"
@@ -175,7 +183,10 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Department</label>
+              <label className="block text-sm text-gray-600 mb-1 flex items-center gap-2">
+                <Building className="w-4 h-4" />
+                Department
+              </label>
               <select
                 value={departmentId}
                 onChange={(e) => setDepartmentId(e.target.value)}
@@ -213,7 +224,10 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
           <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3">ASSIGNMENT & PRIORITY</h3>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Assignee</label>
+              <label className="block text-sm text-gray-600 mb-1 flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Assignee
+              </label>
               <select
                 value={assigneeId}
                 onChange={(e) => setAssigneeId(e.target.value)}
@@ -256,7 +270,10 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
           <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3">LOCATION & SCHEDULE</h3>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Property</label>
+              <label className="block text-sm text-gray-600 mb-1 flex items-center gap-2">
+                <Building className="w-4 h-4" />
+                Property
+              </label>
               <select
                 value={propertyId}
                 onChange={(e) => setPropertyId(e.target.value)}
@@ -275,7 +292,10 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
               </select>
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Room / Zone</label>
+              <label className="block text-sm text-gray-600 mb-1 flex items-center gap-2">
+                <Hash className="w-4 h-4" />
+                Room / Zone
+              </label>
               <select
                 value={roomNumber}
                 onChange={(e) => setRoomNumber(e.target.value)}
@@ -287,7 +307,10 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
               </select>
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Location / Floor (optional)</label>
+              <label className="block text-sm text-gray-600 mb-1 flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                Location / Floor (optional)
+              </label>
               <input
                 type="text"
                 placeholder="e.g. 3rd Floor - Deluxe Suite"
@@ -297,18 +320,48 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
               />
             </div>
             <div>
+              <label className="block text-sm text-gray-600 mb-1">Start Date</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full border px-4 py-2 rounded-lg pl-10"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">End Date</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full border px-4 py-2 rounded-lg pl-10"
+                />
+              </div>
+            </div>
+            <div>
               <label className="block text-sm text-gray-600 mb-1">Due Date</label>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="w-full border px-4 py-2 rounded-lg"
-              />
+              <div className="relative">
+                <AlertCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full border px-4 py-2 rounded-lg pl-10"
+                />
+              </div>
             </div>
             {/* Start time & End time - hour, min, AM/PM */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="block text-sm text-gray-600 mb-1">Start time</label>
+                <label className="block text-sm text-gray-600 mb-1 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Start Time
+                </label>
                 <div className="flex gap-2 items-center flex-wrap">
                   <select
                     value={startTimeHour}
@@ -343,7 +396,10 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="block text-sm text-gray-600 mb-1">End time</label>
+                <label className="block text-sm text-gray-600 mb-1 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  End Time
+                </label>
                 <div className="flex gap-2 items-center flex-wrap">
                   <select
                     value={endTimeHour}
@@ -404,7 +460,10 @@ export default function CreateTaskModal({ onClose, onSuccess }) {
           <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3">ADDITIONAL</h3>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Guest Request (optional)</label>
+              <label className="block text-sm text-gray-600 mb-1 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                Guest Request (optional)
+              </label>
               <textarea
                 placeholder="e.g. Guest has requested extra pillows..."
                 value={guestRequest}

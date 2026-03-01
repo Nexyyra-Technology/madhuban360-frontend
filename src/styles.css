@@ -2216,6 +2216,22 @@ body {
 .task-card-left strong { display: block; font-size: 15px; margin-bottom: 4px; }
 .task-card-left span { font-size: 13px; color: var(--text-secondary); }
 .task-card-left p { font-size: 14px; margin: 8px 0 4px 0; color: var(--text-primary); }
+.task-card-times {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px 16px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.task-time-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.task-time-label { font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.02em; }
+.task-time-value { color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .task-due { font-size: 12px; color: var(--text-muted); }
 .task-duration { display: block; margin-top: 4px; }
 .task-tag { font-size: 11px; padding: 4px 8px; border-radius: var(--radius-sm); font-weight: 600; flex-shrink: 0; }

@@ -203,6 +203,18 @@ export function formatTaskDuration(minutes) {
   return mins ? `${h}h ${mins} min` : `${h}h`;
 }
 
+/** Format time string "HH:mm:ss" or "HH:mm" to readable time (e.g. "9:15 AM") */
+export function formatTaskTime(timeStr) {
+  if (timeStr == null || timeStr === "") return null;
+  const parts = String(timeStr).trim().split(":");
+  if (parts.length < 2) return null;
+  const [h, m] = parts;
+  const d = new Date();
+  d.setHours(Number(h) || 0, Number(m) || 0, 0, 0);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
+}
+
 /** Format due date/time as readable end time (e.g. "22 Feb 2026, 11:59 PM") */
 export function formatTaskEndTime(due) {
   if (due == null || due === "") return null;
@@ -218,7 +230,7 @@ export function formatTaskEndTime(due) {
 }
 
 function normalizeTask(t) {
-  const durationMin = t.duration_minutes ?? t.durationMinutes ?? t.estimated_duration ?? t.estimatedDuration ?? t.duration ?? null;
+  const durationMin = t.timeDuration ?? t.duration_minutes ?? t.durationMinutes ?? t.estimated_duration ?? t.estimatedDuration ?? t.duration ?? null;
   return {
     ...t,
     _id: t.id ?? t._id,
@@ -227,6 +239,8 @@ function normalizeTask(t) {
     description: t.description ?? "",
     dueTime: t.dueDate ?? t.due_date ?? null,
     dueDate: t.dueDate ?? t.due_date ?? null,
+    startTime: t.startTime ?? null,
+    endTime: t.endTime ?? null,
     status: (t.status ?? "pending").toUpperCase().replace(/\s/g, "_"),
     priority: (t.priority ?? "MEDIUM").toUpperCase(),
     location: t.roomNumber ?? t.locationFloor ?? t.room_number ?? t.location_floor ?? "",

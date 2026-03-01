@@ -9,7 +9,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MobileBottomNav from "./MobileBottomNav";
-import { getTaskById, updateTaskStatus, formatTaskEndTime, formatTaskDuration } from "./endUserService";
+import { getTaskById, updateTaskStatus, formatTaskEndTime, formatTaskDuration, formatTaskTime } from "./endUserService";
 
 export default function EndUserTaskDetails() {
   const { id } = useParams();
@@ -60,7 +60,8 @@ export default function EndUserTaskDetails() {
         <h2>📍 {task.title}</h2>
         <p className="task-location">📍 {task.location || task.subtitle || "3rd Floor - Deluxe Suite"}</p>
         <h3>{task.description || "Deep Clean & Linen Change"}</h3>
-        <p className="task-due">🕐 End time: {formatTaskEndTime(task.dueTime || task.dueDate || task.dueBy) ?? "—"}</p>
+        <p className="task-due">🕐 Start time: {formatTaskTime(task.startTime) ?? formatTaskEndTime(task.dueDate) ?? "—"}</p>
+        <p className="task-due">🕐 End time: {formatTaskTime(task.endTime) ?? formatTaskEndTime(task.dueTime || task.dueDate || task.dueBy) ?? "—"}</p>
         <p className="task-due">⏱ Task duration: {formatTaskDuration(task.durationMinutes) ?? "—"}</p>
       </div>
 

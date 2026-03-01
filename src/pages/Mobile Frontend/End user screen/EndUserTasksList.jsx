@@ -10,7 +10,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileBottomNav from "./MobileBottomNav";
-import { getMyAssignedTasks, formatTaskDuration, formatTaskEndTime } from "./endUserService";
+import { getMyAssignedTasks, formatTaskDuration, formatTaskEndTime, formatTaskTime } from "./endUserService";
 
 export default function EndUserTasksList() {
   const navigate = useNavigate();
@@ -54,8 +54,20 @@ export default function EndUserTasksList() {
                 <strong>{t.title}</strong>
                 <span>{t.subtitle || t.category}</span>
                 <p>{t.description}</p>
-                <span className="task-due">🕐 End time: {formatTaskEndTime(t.dueTime || t.dueDate) ?? "—"}</span>
-                <span className="task-due task-duration">⏱ Task duration: {formatTaskDuration(t.durationMinutes) ?? "—"}</span>
+                <div className="task-card-times" role="grid" aria-label="Task schedule">
+                  <div className="task-time-col">
+                    <span className="task-time-label">Start</span>
+                    <span className="task-time-value">{formatTaskTime(t.startTime) ?? formatTaskEndTime(t.dueDate) ?? "—"}</span>
+                  </div>
+                  <div className="task-time-col">
+                    <span className="task-time-label">End</span>
+                    <span className="task-time-value">{formatTaskTime(t.endTime) ?? formatTaskEndTime(t.dueTime || t.dueDate) ?? "—"}</span>
+                  </div>
+                  <div className="task-time-col">
+                    <span className="task-time-label">Duration</span>
+                    <span className="task-time-value">{formatTaskDuration(t.durationMinutes) ?? "—"}</span>
+                  </div>
+                </div>
               </div>
               <span className={`task-tag ${statusStyle(t.status)}`}>
                 {t.status?.replace(/_/g, " ") || "Pending"}
